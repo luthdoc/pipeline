@@ -10,7 +10,7 @@ O prompt de invocação contém:
 - **Branch** de destino
 - **Brief** do orquestrador, que inclui a **baseline**: o resultado dos gates medido antes de qualquer alteração, no Bootstrap. Se um gate já estava vermelho ali, ele não é seu.
 
-Uma lista de achados **é** uma peça de trabalho como qualquer outra: os achados são o contrato, do mesmo jeito que acceptance criteria são. As restrições de escopo que valem para ela são as mesmas de sempre, em "Restrições absolutas" — nunca refatore código que a task não tocou, nunca escreva o que nenhum critério pede.
+Uma lista de achados **é** uma peça de trabalho como qualquer outra: os achados são o contrato, do mesmo jeito que acceptance criteria são. Ela vem com o caminho de `review-rules.md`: quando um achado cita um código de critério (`S2`, `CL6`…), leia a regra ali para entender o que o revisor espera. Código que não está nesse arquivo é do projeto, em `docs/agents/review-rules-projeto.md`. As restrições de escopo que valem para ela são as mesmas de sempre, em "Restrições absolutas" — nunca refatore código que a task não tocou, nunca escreva o que nenhum critério pede.
 
 Os comandos do projeto estão na seção `## Commands` do **arquivo de instruções** da raiz: `AGENTS.md`, ou `CLAUDE.md` quando não houver `AGENTS.md`.
 

@@ -25,7 +25,7 @@ Check with the user that these seams match their expectations.
 
 3. Write the spec using the template below, then publish it to the project issue tracker. Apply the `ready-for-agent` triage label - no need for additional triage.
 
-4. Write a working copy to `.scratch/<spec-slug>/spec.md` — same content, plus the issue number on the **first line**, in the form `#<N>`. That line is not decoration: `implement` locates this file by grepping for the issue number, because the slug is not derivable from the issue. The file is gitignored and disposable; the issue is canonical. If they ever diverge, the issue wins.
+4. Write a working copy to `.scratch/<spec-slug>/spec.md` — same content, plus the issue number on the **first line**, in the form `#<N>`. That line is not decoration: `implement` locates this file by searching for the issue number, because the slug is not derivable from the issue. The file is gitignored and disposable; the issue is canonical. If they ever diverge, the issue wins.
 
 5. Say whether the spec fits one context window as a single unit of work. If it does, tell the user they can run `/implement <issue>` directly. If it doesn't, point at `/to-tickets <issue>` — that skill owns the slicing decision, not this one.
 

@@ -21,7 +21,7 @@ Leia os documentos do item 4 você mesmo. Eles chegam por caminho e não colados
 
 **O que você não recebe é o raciocínio de quem implementou.** Isolamento do raciocínio ≠ isolamento do requisito: a SPEC não é raciocínio de ninguém — é a régua. Esconder a régua não protege independência, só cega a review. É por isso que o campo `## Covers` da SPEC existe: para você conferir cobertura contra o requisito em vez de confiar no texto do ticket.
 
-Numa **re-review** (depois de uma rodada de correção), o prompt contém os achados que você mesmo reportou antes, mais o diff da correção. Ver a seção final.
+Numa **re-review** (depois de uma rodada de correção), o prompt contém os achados que você mesmo reportou antes, mais o diff da correção. Ver a seção "Re-review depois de uma correção".
 
 ---
 
@@ -52,7 +52,7 @@ Agora leia o diff completo. Procure as **divergências** entre o que você esper
 
 ### 3. Percorrer os eixos
 
-Leia `review-rules.md` por inteiro — inclusive a **regra de admissão de critério** do topo, que explica por que nenhum critério ali exige executar um comando. Percorra os eixos **nesta ordem**, que é a ordem de severidade:
+Leia por inteiro o `review-rules.md` cujo caminho você recebeu no item 1 — inclusive a **regra de admissão de critério** do topo, que explica por que nenhum critério ali exige executar um comando. Percorra os eixos **nesta ordem**, que é a ordem de severidade:
 
 | Eixo | O que verificar | Quando pular |
 |---|---|---|
@@ -61,9 +61,9 @@ Leia `review-rules.md` por inteiro — inclusive a **regra de admissão de crit�
 | **CL** limpeza | CL1–CL6 nos arquivos tocados | nunca |
 | **C** complexidade | C1–C6 nas funções que o diff criou ou alterou | nunca |
 | **SM** code smells | SM1–SM10 sobre a estrutura do que o diff criou | nunca — mas leia a disciplina do eixo antes |
-| **Projeto** | os critérios de `docs/agents/review-rules.md` | quando o arquivo não existe no repo |
+| **+ projeto** | os critérios de `docs/agents/review-rules-projeto.md`, além dos cinco universais | quando o arquivo não existe no repo |
 
-`docs/agents/review-rules.md` é opcional e pertence ao projeto: critérios de stack, de framework ou de design system que não fazem sentido fora dele. Quando existe, ele vale tanto quanto os universais, com os códigos e severidades que ele mesmo define.
+`docs/agents/review-rules-projeto.md` é opcional e pertence ao projeto: critérios de stack, de framework ou de design system que não fazem sentido fora dele. Quando existe, ele vale tanto quanto os universais, com os códigos e severidades que ele mesmo define.
 
 Cada achado precisa de: código do critério, descrição, `arquivo:linha`, e o trecho que serve de evidência.
 
@@ -159,7 +159,7 @@ ESCALAR
 - Motivo: [descrição exata]
 - Por que uma rodada de correção não resolve: [explicação]
 - Decisão necessária: [o que o humano precisa decidir — em linguagem de produto
-  ou de risco, nunca de código; use as três linhas da seção acima]
+  ou de risco, nunca de código; use as três linhas de "Como escrever o que pode chegar ao usuário"]
 ```
 
 Um `ESCALAR` que só pode ser formulado como decisão de código não é escalação — é o problema sendo jogado fora. Se não há como enunciá-lo como decisão de produto ou de risco, ele se resolve dentro do loop.

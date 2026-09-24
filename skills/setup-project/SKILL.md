@@ -14,10 +14,11 @@ disable-model-invocation: true
 
 Você configura, uma vez por repositório, os contratos que o resto do pipeline lê em runtime. Sem eles as outras skills param com erro — de propósito, para falhar alto em vez de adivinhar.
 
-O output são dois arquivos:
+O output são dois arquivos, mais um opcional:
 
 - **arquivo de instruções** — três seções curtas: `## Issue Tracker`, `## Commands`, `## Fluxo`
 - **`docs/agents/issue-tracker.md`** — o detalhe pesado (comandos do tracker, tabela de labels)
+- **`docs/agents/review-rules-projeto.md`** *(opcional)* — critérios de review específicos do projeto (Parte 5)
 
 **Qual é o arquivo de instruções:** `AGENTS.md` na raiz — o formato que a maioria das ferramentas de agente lê. Se o repo já tem `CLAUDE.md` e não tem `AGENTS.md`, use o `CLAUDE.md` existente em vez de criar um segundo arquivo. Se a ferramenta do usuário não carrega `AGENTS.md` sozinha, avise: o arquivo dela precisa apontar para o `AGENTS.md`, senão a seção `## Fluxo` não entra no contexto.
 
@@ -54,7 +55,7 @@ O critério não é o tamanho da seção — é **se aquela informação envelhe
 | Estado atual do código: módulos, seams, invariantes | **sim** | `docs/agents/architecture.md` — o arquivo de instruções aponta |
 | O que já foi construído, quantas telas existem, o que falta | **sim** | não mora em lugar nenhum: é o histórico do git e o quadro de issues |
 
-**Por que a regra existe:** o arquivo de instruções misturava decisão estável (stack, tracker, comandos) com fato que muda a cada PR ("este repositório ainda não tem código", "o produto é uma landing de guias grátis"). O segundo tipo apodrece sozinho, e o arquivo não tem dono que o mantenha. Isso já produziu um arquivo de instruções que descrevia um produto que não existe mais, contradizendo o PRD real — enquanto o próprio arquivo enunciava a regra certa ("update it only when a decision actually changes") e a violava na seção seguinte.
+**Por que a regra existe:** fato que muda a cada PR ("este repositório ainda não tem código", "o produto é uma landing de guias grátis") apodrece sozinho, e o arquivo de instruções não tem dono que o mantenha. Misturado com decisão estável, ele acaba descrevendo um produto que não existe mais e contradizendo o PRD real.
 
 Ao gravar ou reconfigurar: se você encontrar uma seção `## Status`, `## Product` ou equivalente descrevendo o que já existe no código, **substitua por um ponteiro** e mova o conteúdo para o documento que tem dono.
 
@@ -347,7 +348,7 @@ Confirme o critério com o usuário antes de gravar: o limiar entre "implementa 
 
 ## Parte 5 — Critérios de review do projeto (opcional)
 
-O revisor aplica critérios universais — segurança, testes, limpeza, complexidade, code smells — que valem para qualquer stack. Critério que só faz sentido **neste** projeto (regras do framework, tokens do design system, convenções da casa) mora em `docs/agents/review-rules.md`, no formato dos universais: código, regra, por quê, como checar **por leitura**, severidade. O revisor o lê quando ele existe.
+O revisor aplica critérios universais — segurança, testes, limpeza, complexidade, code smells — que valem para qualquer stack. Critério que só faz sentido **neste** projeto (regras do framework, tokens do design system, convenções da casa) mora em `docs/agents/review-rules-projeto.md`, no formato dos universais: código, regra, por quê, como checar **por leitura**, severidade. O revisor o lê quando ele existe.
 
 Não crie o arquivo por padrão. Pergunte se a stack tem armadilhas que nenhum lint pega — se sim, proponha poucos critérios concretos; se não, pule. Um critério que exige executar algo não entra: vira label de `## Commands` ou passo da CI.
 
@@ -363,6 +364,7 @@ Ao finalizar, informe:
 > **Commands:** lint [Ns] · typecheck [Ns] · test [Ns] · build [Ns] · clean [Ns | não declarado]
 > **Fluxo:** gravado no arquivo de instruções.
 > **Remote:** [URL].
+> **Critérios do projeto:** [`docs/agents/review-rules-projeto.md` com N critérios | não criado].
 >
 > Próximo passo: `/to-spec` para registrar uma unidade de trabalho, ou `/implement`
 > direto se a mudança for pequena. Loop AFK: [disponível via `/implement` | indisponível neste modo].

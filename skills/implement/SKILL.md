@@ -25,9 +25,9 @@ Os prompts dos workers moram **nesta pasta**, ao lado deste arquivo:
 | `reviewer.md` | revisa de forma independente, só lendo |
 | `review-rules.md` | critérios universais da review, lidos pelo revisor |
 
-**Abrir um worker** significa: abrir um **subagente novo, com contexto limpo**, cujo prompt é o conteúdo do arquivo do papel mais o que cada passo abaixo manda passar. Passe o **caminho absoluto** do arquivo — o subagente não sabe onde esta skill está instalada. Se a ferramenta deixar escolher o modelo do subagente, use o mais capaz disponível para os dois workers.
+**Abrir um worker** significa: abrir um **subagente novo, com contexto limpo**, cujo prompt é o conteúdo do arquivo do papel mais o que cada passo abaixo manda passar. Passe o **caminho absoluto** do arquivo — o subagente não sabe onde esta skill está instalada. Se a sua ferramenta não informa a pasta desta skill, localize-a buscando `skills/implement/implementer.md` a partir da raiz do repo (o instalador põe as skills em pastas como `.agents/skills/` ou `.claude/skills/`). Se a ferramenta deixar escolher o modelo do subagente, use o mais capaz disponível para os dois workers.
 
-**Ferramenta sem subagentes:** execute a fase você mesmo, em sequência, seguindo o arquivo do papel à risca. O isolamento do revisor passa a depender de você: antes de revisar, **não releia** nada do que o implementador escreveu além do diff.
+**Ferramenta sem subagentes:** execute a fase você mesmo, em sequência, seguindo o arquivo do papel à risca. Enquanto executa a fase do `implementer`, a regra "nunca toca código de produção" fica suspensa — você é o implementador naquela fase. **A independência do revisor se perde:** o raciocínio de quem implementou já está no seu contexto, e nenhuma disciplina de leitura o apaga. Revise mesmo assim, a partir do diff e do requisito, e **declare no corpo do PR** que a review não foi independente, porque a ferramenta não abre subagentes.
 
 ## Arquivo de instruções
 
@@ -195,7 +195,7 @@ Com tracker, **não mova a label aqui**. `in-review` significa "código na branc
 loop_count += 1
 ```
 
-Abra o worker `implementer.md` de novo, passando: a referência da unidade, a branch, e **a lista de achados CRITICAL e WARN verbatim** como peça de trabalho. A lista de achados é o contrato dele; o mandato estreito já está escrito nas "Restrições absolutas" do arquivo dele — não repita nem invente um segundo contrato aqui. Peça de volta `IMPLEMENTADO` ou `ESCALAR`.
+Abra o worker `implementer.md` de novo, passando: a referência da unidade, a branch, **a lista de achados CRITICAL e WARN verbatim** como peça de trabalho, e o caminho de `review-rules.md` — o implementador consulta ali o critério pelo código de cada achado. A lista de achados é o contrato dele; o mandato estreito já está escrito nas "Restrições absolutas" do arquivo dele — não repita nem invente um segundo contrato aqui. Peça de volta `IMPLEMENTADO` ou `ESCALAR`.
 
 Depois da correção, volte ao revisor — mas em modo **re-review incremental**, não review nova. Abra o worker `reviewer.md` passando: o caminho de `review-rules.md`, a lista verbatim dos achados da review anterior, o `git diff HEAD~1` da correção, e a instrução de seguir a seção "Re-review depois de uma correção", sem refazer a review completa.
 
@@ -273,6 +273,7 @@ Abra com `gh pr create --draft --base main`, título da unidade, e corpo contend
 - **Gates finais** — o bloco `Checks` do retorno do `implementer`, **colado**, label por label; `não reportado` para o que não veio
 - **Ficou de fora** — os tickets de follow-up abertos na arbitragem, cada um com número e uma linha em português; e os NITs do revisor
 - **Baseline** — se ela estava vermelha no Bootstrap e o usuário mandou seguir, diga o quê estava vermelho
+- **Review sem independência** — se a ferramenta não abriu subagentes e você mesmo revisou, diga isso
 - a linha de atribuição que a sua ferramenta usa em PRs, se ela tiver uma
 
 **Não faça merge.** O PR sai em draft e a decisão de merge é do usuário.

@@ -9,13 +9,13 @@ Um critério só pertence a este arquivo se o revisor puder julgá-lo **lendo o 
 1. **Critério que exige executar algo** não é do revisor. Ele não executa nada. Se algo precisa rodar, é label de `## Commands` — e o resultado chega colado no retorno do worker que o executou — ou é passo da CI. Um critério que manda o revisor rodar um comando só pode produzir duas coisas: achado inventado ou omissão silenciosa.
 2. **Prática que só o autor pode atestar** não é critério de review. "Escreveu o teste antes do código" não é observável num diff — o diff mostra o resultado, não a ordem em que foi digitado. Isso é regra do worker que faz, e mora no `implementer.md`.
 
-Numa equipe real ninguém pede ao revisor que rode `npm audit`, e ninguém audita se o autor escreveu o teste primeiro. As duas regras estão no papel errado. Este arquivo já afirmava "todo critério aqui é verificável por leitura" e se contradizia em dois pontos; a afirmação agora vale.
+Numa equipe real ninguém pede ao revisor que rode `npm audit`, e ninguém audita se o autor escreveu o teste primeiro. As duas regras estão no papel errado.
 
 ## Os eixos
 
 Cinco eixos universais, nesta ordem de severidade: **S** segurança, **T** testes, **CL** limpeza, **C** complexidade, **SM** code smells.
 
-Critérios de stack, de framework ou de design system não moram aqui — valem só para um projeto, e moram em `docs/agents/review-rules.md` do próprio projeto, quando ele os tem.
+Critérios de stack, de framework ou de design system não moram aqui — valem só para um projeto, e moram em `docs/agents/review-rules-projeto.md` do próprio projeto, quando ele os tem.
 
 Reporte só achados com evidência concreta — `arquivo:linha` mais o trecho que sustenta. Suspeita sem evidência não é achado.
 
