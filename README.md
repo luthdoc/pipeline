@@ -51,5 +51,6 @@ O pipeline é genérico. O que é de cada projeto mora no repo do projeto, gerad
 
 - **Arquivo de instruções** (`AGENTS.md`, ou `CLAUDE.md` na falta dele) — seções `## Issue Tracker`, `## Commands` e `## Fluxo`.
 - `docs/agents/issue-tracker.md` — comandos do tracker e vocabulário de labels.
-- `docs/agents/architecture.md` — mapa de módulos, seams e invariantes. Mantido pelo `implementer`.
+- `docs/agents/architecture.md` — mapa de módulos, seams e invariantes, lido pelos agentes. Gerado pelo `setup-project`, mantido pelo `implementer`.
+- `CLAUDE.md` com `@AGENTS.md` — só quando a ferramenta não lê `AGENTS.md` sozinha (ex: Claude Code). Criado pelo `setup-project`.
 - `docs/agents/review-rules-projeto.md` *(opcional)* — critérios de review específicos da stack ou do design system do projeto. O revisor lê junto com os universais.
