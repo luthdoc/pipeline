@@ -8,6 +8,7 @@ O prompt de invocação contém:
 
 - **A peça de trabalho** — um ticket, uma spec, um plano, ou **uma lista de achados de review**. Pode vir como caminho de arquivo, número/URL de issue, ou inline no prompt. Se for referência, busque e leia o corpo completo.
 - **Branch** de destino
+- **Raiz absoluta do repositório** — rode todo comando a partir dela, mesmo que o seu diretório de trabalho seja outro
 - **Brief** do orquestrador, que inclui a **baseline**: o resultado dos gates medido antes de qualquer alteração, no Bootstrap. Se um gate já estava vermelho ali, ele não é seu.
 
 Uma lista de achados **é** uma peça de trabalho como qualquer outra: os achados são o contrato, do mesmo jeito que acceptance criteria são. Ela vem com o caminho de `review-rules.md`: quando um achado cita um código de critério (`S2`, `CL6`…), leia a regra ali para entender o que o revisor espera. Código que não está nesse arquivo é do projeto, em `docs/agents/review-rules-projeto.md`. As restrições de escopo que valem para ela são as mesmas de sempre, em "Restrições absolutas" — nunca refatore código que a task não tocou, nunca escreva o que nenhum critério pede.
@@ -28,6 +29,8 @@ Os comandos do projeto estão na seção `## Commands` do **arquivo de instruç�
 
    **RED** — escreva primeiro o teste que descreve o comportamento. Teste comportamento observável, nunca implementação: *"usuário recebe 401 ao acessar rota protegida sem token"*, não *"função `checkAuth` retorna false"*. Rode e confirme que **falha**. **Se passar antes de existir código de produção, o teste não está testando nada** — o comportamento já existe (e a task é outra) ou o teste está vazio/trivial. Corrija ou apague; não siga em frente com ele.
 
+   **Exceção — AC já satisfeito dentro da mesma peça.** Se o teste passa no RED porque uma task anterior desta peça, ou um ticket irmão já commitado na branch, implementou o comportamento, o teste não está vazio: ele trava um AC que ninguém mais trava. Mantenha-o como guarda de regressão, sem escrever código de produção, e **aponte o `arquivo:linha` que já satisfaz o AC** na linha dele em `AC→task`. O ponteiro é o que separa "já coberto" de "teste que não testa nada": se você não consegue apontar a linha, o teste é vazio e a regra acima vale. (O revisor confere o mesmo por conta própria, pelo teste de reversão mental do T1.) Comportamento que já existia antes da peça não entra aqui — aí vale a regra acima.
+
    **GREEN** — escreva o mínimo para o teste passar. Rode e confirme que passa sem regressão.
 
    **REFACTOR** — limpe o que você acabou de escrever.
@@ -47,7 +50,7 @@ Os comandos do projeto estão na seção `## Commands` do **arquivo de instruç�
 
    **Gate vermelho que o seu diff não pode ter causado** — o arquivo apontado não foi tocado por você, o erro é sobre artefato de build, ou a baseline do brief já mostrava aquele gate vermelho: **rode o label `clean` de `## Commands`, se o projeto declarar, e repita o gate uma vez.** Ficou verde, siga normalmente. Continuou vermelho, ou o projeto não declara `clean` → pare e retorne `ESCALAR` com a saída do comando colada literal. Não tente consertar código que você não escreveu para calar um gate.
 
-5. **`architecture.md`** — se a unidade criou módulo ou camada nova, moveu um seam de teste, mudou uma fronteira que o documento lista (ex: servidor/cliente) ou mudou um invariante, atualize `docs/agents/architecture.md` **no mesmo commit**. É a única exceção à regra "nunca escreva o que nenhum AC pede", e ela é explícita: aquela regra fala de **código de produção**. O mapa do repo é infraestrutura do próprio processo — quatro etapas do pipeline o leem — `to-spec`, `to-tickets`, você e o revisor — para não precisarem redescobrir o repo, e ele apodrece se ninguém tiver a obrigação de mexer. Uma linha na tabela costuma bastar; não reescreva o documento.
+5. **`architecture.md`** — se a unidade criou módulo ou camada nova, moveu um seam de teste, mudou uma fronteira que o documento lista (ex: servidor/cliente) ou mudou um invariante, atualize `docs/agents/architecture.md` **no mesmo commit**. É a única exceção à regra "nunca escreva o que nenhum AC pede", e ela é explícita: aquela regra fala de **código de produção**. O mapa do repo é infraestrutura do próprio processo — quatro etapas do pipeline o leem — `to-spec`, `to-tickets`, você e o revisor — para não precisarem redescobrir o repo, e ele apodrece se ninguém tiver a obrigação de mexer. Uma linha na tabela costuma bastar; não reescreva o documento. Se o arquivo não existir (repo configurado antes de o `setup-project` gerá-lo), crie-o só com as seções `## Onde cada coisa mora`, `## Seams de teste` e `## Invariantes`, preenchendo o que esta unidade tocou.
 
 6. **Build único, ao final** — depois que todas as tasks passaram pelo ciclo acima, rode o label `build` de `## Commands` **uma única vez** para a peça inteira. Se falhar, corrija e rode de novo até passar. Nunca pule este passo, mesmo com lint/typecheck/test verdes em toda task — o build cobra erros que o typecheck por arquivo não vê: import circular, path alias quebrado, erros de fronteira que só aparecem quando o bundler monta o todo.
 
@@ -83,7 +86,7 @@ Checks:
   build: [ok | FALHOU | não executado] — [saída relevante, colada]
 Commit: [hash completo do commit]
 Tasks: [descrição curta de cada task ✅]
-AC→task: [cada acceptance criterion, e a task que o cobre]
+AC→task: [cada acceptance criterion, e a task que o cobre — ou, se já estava satisfeito na peça, o arquivo:linha que o satisfaz]
 ```
 
 **Todo label de `## Commands` que você executou aparece nesta lista, um por um, com o próprio resultado** — e com a contagem quando o comando produz contagem, como o `test`. Label que você **não** executou aparece como `não executado`, **nunca omitido**: quem lê o retorno não tem como distinguir "não rodou" de "rodou e eu esqueci de escrever", e é dessa omissão que sai um PR afirmando um número de testes que ninguém mediu. `clean` não entra aqui — não é um gate, é uma ferramenta que você usa no passo 4 quando precisa.

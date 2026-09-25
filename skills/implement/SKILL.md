@@ -25,13 +25,19 @@ Os prompts dos workers moram **nesta pasta**, ao lado deste arquivo:
 | `reviewer.md` | revisa de forma independente, só lendo |
 | `review-rules.md` | critérios universais da review, lidos pelo revisor |
 
-**Abrir um worker** significa: abrir um **subagente novo, com contexto limpo**, cujo prompt é o conteúdo do arquivo do papel mais o que cada passo abaixo manda passar. Passe o **caminho absoluto** do arquivo — o subagente não sabe onde esta skill está instalada. Se a sua ferramenta não informa a pasta desta skill, localize-a buscando `skills/implement/implementer.md` a partir da raiz do repo, incluindo pastas ocultas. Se a ferramenta deixar escolher o modelo do subagente, use o mais capaz disponível para os dois workers.
+**Abrir um worker** significa: abrir um **subagente novo, com contexto limpo**, cujo prompt é o conteúdo do arquivo do papel mais o que cada passo abaixo manda passar. Passe o **caminho absoluto** do arquivo — o subagente não sabe onde esta skill está instalada — e a **raiz absoluta do repositório**: é onde ele roda comandos e acha o arquivo de instruções. O subagente pode herdar outro diretório de trabalho da sessão, e aí rodaria gates e `git add` no lugar errado. Se a sua ferramenta não informa a pasta desta skill, localize-a buscando `skills/implement/implementer.md` a partir da raiz do repo, incluindo pastas ocultas. Se a ferramenta deixar escolher o modelo do subagente, use o mais capaz disponível para os dois workers.
 
 **Ferramenta sem subagentes:** execute a fase você mesmo, em sequência, seguindo o arquivo do papel à risca. Enquanto executa a fase do `implementer`, a regra "nunca toca código de produção" fica suspensa — você é o implementador naquela fase. **A independência do revisor se perde:** o raciocínio de quem implementou já está no seu contexto, e nenhuma disciplina de leitura o apaga. Revise mesmo assim, a partir do diff e do requisito, e **declare no corpo do PR** que a review não foi independente, porque a ferramenta não abre subagentes.
 
 ## Arquivo de instruções
 
 Os contratos do projeto moram no **arquivo de instruções** da raiz: `AGENTS.md`, ou `CLAUDE.md` quando não houver `AGENTS.md`. É dele que vêm `## Commands` e `## Issue Tracker`.
+
+## Comandos de shell
+
+Todo comando deste documento roda em Bash e em PowerShell. Por isso nenhum usa `||`, `&&`, `$(...)`, `2>/dev/null` ou pipe: quando um passo depende do resultado do anterior, rode um, leia a saída e decida o próximo.
+
+Corpo de issue, comentário e PR vai sempre por **`--body-file`**, nunca por `--body "..."`. Markdown tem crase, aspas, `$`, `!` e `&`, e escapar isso inline quebra de jeitos diferentes em cada shell. Grave o corpo num arquivo em `.scratch/` (na pasta da SPEC, quando houver; senão em `.scratch/<branch>/`) e passe o caminho.
 
 ---
 
@@ -82,7 +88,7 @@ Você recebe uma referência crua e resolve sozinho o que ela é. Numa equipe re
 
 | Chegou | Resolução |
 |---|---|
-| **número/URL de issue** | busque a issue. **Tem sub-issues?** (query documentada em `docs/agents/issue-tracker.md`) → tem: a unidade é a **fronteira dos tickets**; não tem: a unidade é a própria issue. Depois, descubra se ela **tem pai** — é o que define a branch e quando o PR sai (passo 2). |
+| **número/URL de issue** | busque a issue. **Tem sub-issues?** (comando "Listar tickets da spec" de `docs/agents/issue-tracker.md`) → tem: a unidade é a **fronteira dos tickets**; não tem: a unidade é a própria issue. Depois, descubra se ela **tem pai** — é o que define a branch e quando o PR sai (passo 2). |
 | **caminho de arquivo** | leia o arquivo. Tem número de issue no topo (o `to-spec` grava)? → resolva como issue, pela linha acima. Senão → trate o texto como a unidade, **sem tracker**. |
 | **texto inline** (pós-grill) | a unidade é o texto. **Sem tracker.** |
 | **nada** | liste as issues com `ready-for-agent` e pergunte qual. Não escolha por conta própria. |
@@ -91,20 +97,20 @@ Declare em uma linha o que você resolveu, antes de seguir: *"Unidade: fronteira
 
 ### 2. Branch — por SPEC, nunca por ticket
 
-Antes de escolher a branch, descubra se a unidade tem **SPEC pai**, pela query `parent` documentada em `docs/agents/issue-tracker.md` — ou, na falta dela, pela seção `## Spec` do corpo do ticket.
+Antes de escolher a branch, descubra se a unidade tem **SPEC pai**, pelo comando "Ver pai" de `docs/agents/issue-tracker.md` — ou, na falta dele, pela seção `## Spec` do corpo do ticket.
 
 - Ticket **com** SPEC pai → branch `spec-<N do pai>-<slug do pai>`
 - **Sem** pai → `spec-<N>-<slug>`
 - **Sem tracker** → `<tipo>/<slug>` (ex: `fix/hover-do-botao`)
 
-**Se a branch da SPEC já existe, faça checkout nela — não recrie da `main`:**
+**Se a branch da SPEC já existe, faça checkout nela — não recrie da `main`.** Em passos, lendo o resultado de cada um:
 
-```bash
-git fetch origin
-git checkout <branch> 2>/dev/null || (git checkout main && git pull origin main && git checkout -b <branch>)
-```
+1. `git fetch origin`
+2. `git rev-parse --verify --quiet <branch>` e, se não resolver, `git rev-parse --verify --quiet origin/<branch>`
+3. Algum resolveu → `git checkout <branch>` (se ela só existe no remote, o git cria a local rastreando `origin/<branch>`)
+4. Nenhum resolveu → `git checkout main`, depois `git pull origin main`, depois `git checkout -b <branch>`
 
-Recriar da `main` faz o trabalho dos tickets irmãos sumir do diff, e o `implementer` reimplementa dependência que já existe.
+Recriar da `main` faz o trabalho dos tickets irmãos sumir do diff, e o `implementer` reimplementa dependência que já existe. Checar também o `origin/` cobre a retomada em outra máquina, onde a branch ainda não existe localmente.
 
 **Branch e PR sempre**, inclusive sem tracker — é o que mantém o controle de versão.
 
@@ -134,7 +140,9 @@ Esta é a **única** vez que você roda os gates. Durante o Loop, não: o result
 
 ## Detecção de estado (com tracker)
 
-Leia a unidade e, se ela tiver tickets, todos eles, pelos comandos de `docs/agents/issue-tracker.md`. No GitHub os tickets são sub-issues e **não aparecem em `gh issue list`** como filhos — use a query de sub-issues documentada lá.
+Leia a unidade e, se ela tiver tickets, todos eles, pelos comandos de `docs/agents/issue-tracker.md`. No GitHub os tickets são sub-issues e **não aparecem em `gh issue list`** como filhos — use o comando "Listar tickets da spec" documentado lá.
+
+**SPEC com tickets:** o estado é dos tickets, e só deles. A label da própria SPEC é um espelho para o quadro (ver "Transições de estado") e **não entra na detecção** — senão uma SPEC em `in-progress` seria lida como "retome a SPEC inteira".
 
 Estado:
 
@@ -144,7 +152,7 @@ Estado:
 - **Todos os tickets da unidade em `in-review` ou fechados, e sem PR** → abre o PR
 - **PR aberto** → concluído
 
-**A fronteira** é o conjunto de tickets cujos bloqueadores estão **todos** em `in-review` ou fechados. Ticket sem bloqueador está na fronteira desde o início; numa cadeia linear, a fronteira é sempre um ticket, de cima para baixo. Leia a relação de bloqueio nativa do tracker, ou a seção `## Blocked by` do corpo. Recalcule a cada ticket concluído.
+**A fronteira** é o conjunto de tickets cujos bloqueadores estão **todos** em `in-review` ou fechados. Ticket sem bloqueador está na fronteira desde o início; numa cadeia linear, a fronteira é sempre um ticket, de cima para baixo. **A fonte do bloqueio é a seção `## Blocked by` do corpo de cada ticket, e só ela** — mesmo que o tracker tenha relação de bloqueio nativa. Uma fonte só não diverge, e funciona igual em qualquer tracker. Recalcule a cada ticket concluído.
 
 Numa unidade sem tickets, a fronteira é a própria issue. Sem tracker não há fronteira.
 
@@ -162,7 +170,9 @@ Leia a unidade completa. Escreva um brief curto (3–5 linhas): objetivo da muda
 
 ### 2 — Implementar
 
-Com tracker, mova para `in-progress` — **removendo o estado anterior na mesma operação** (ver "Transições de estado").
+Com tracker, mova para `in-progress` — **removendo o estado anterior na mesma operação** (ver "Transições de estado"). Se a unidade é um ticket e a SPEC pai ainda não está em `in-progress`, mova a SPEC também.
+
+**Registre a base da unidade** antes de abrir o worker: `git rev-parse HEAD`. É dela que sai o diff do passo 3. Ao **retomar** uma unidade em `in-progress` (numa sessão nova, sem a base na memória), a base é o pai do commit mais antigo da unidade: liste com `git log main..HEAD --format=%H --grep="(#N)"` e use `<hash mais antigo>~1`; se não houver commit com `(#N)`, a base é o `HEAD` atual.
 
 Abra o worker `implementer.md`, passando: referência e título da unidade, o corpo completo (What to build + Acceptance criteria), a branch, e o brief com a baseline. Peça de volta: `IMPLEMENTADO` + diff stat + arquivos + **resultado por label** + commit hash + tasks + mapa AC→task.
 
@@ -172,14 +182,14 @@ O implementador já rodou `lint`, `typecheck` e a suite de `test` a cada task, e
 
 ### 3 — Revisar
 
-Colete o diff da unidade (`git diff HEAD~1` logo após o commit do `implementer`).
+Colete o diff da unidade: `git diff <base>..HEAD`, com a base registrada no passo 2. **Não use `HEAD~1`**: ele mostra só o último commit, e a unidade pode ter mais de um — uma retomada, uma correção anterior, um commit feito fora do loop.
 
 Abra o worker `reviewer.md` em modo **review nova**, passando:
 
 - o caminho absoluto de `review-rules.md`, desta pasta;
 - o **corpo completo da unidade** (What to build + Acceptance criteria);
 - o **diff completo**;
-- o **caminho** dos documentos de requisito que existirem — a cópia de trabalho da SPEC e, se ela declarar ids em `## Covers`, o `docs/prd.md`. **Localize a cópia da SPEC pelo número da issue**, com o comando documentado em `docs/agents/issue-tracker.md`; não reconstrua o slug. Não encontrou, diga "não disponível" em vez de passar um caminho que não abre. **Caminho, não texto colado:** colar obrigaria você a carregar a SPEC no seu próprio contexto — o único que persiste do começo ao fim do loop, ticket após ticket, logo o mais caro — e ainda duplicá-la no prompt.
+- o **caminho** dos documentos de requisito que existirem — a cópia de trabalho da SPEC e, se ela declarar ids em `## Covers`, o `docs/prd.md`. **Localize a cópia da SPEC pelo número da issue** — o da própria unidade, ou o do pai quando a unidade é ticket: busque, com a ferramenta de busca de conteúdo, a linha exata `#<N>` (regex `^#<N>$`) em `.scratch/*/spec.md`. É convenção do pipeline, não do tracker — o `to-spec` e o `to-tickets` gravam o número na primeira linha justamente para isso. Não reconstrua o slug. Não encontrou, diga "não disponível" em vez de passar um caminho que não abre. **Caminho, não texto colado:** colar obrigaria você a carregar a SPEC no seu próprio contexto — o único que persiste do começo ao fim do loop, ticket após ticket, logo o mais caro — e ainda duplicá-la no prompt.
 
 **Nunca passe as notas do implementador ao revisor.** A independência dele é o que torna a review valiosa. Isso vale para o **raciocínio** de quem implementou, não para o **requisito**: a SPEC não é raciocínio de ninguém, é a régua, e esconder a régua não protege independência — só cega a review.
 
@@ -195,9 +205,9 @@ Com tracker, **não mova a label aqui**. `in-review` significa "código na branc
 loop_count += 1
 ```
 
-Abra o worker `implementer.md` de novo, passando: a referência da unidade, a branch, **a lista de achados CRITICAL e WARN verbatim** como peça de trabalho, e o caminho de `review-rules.md` — o implementador consulta ali o critério pelo código de cada achado. A lista de achados é o contrato dele; o mandato estreito já está escrito nas "Restrições absolutas" do arquivo dele — não repita nem invente um segundo contrato aqui. Peça de volta `IMPLEMENTADO` ou `ESCALAR`.
+Registre `git rev-parse HEAD` — é a base da correção. Abra o worker `implementer.md` de novo, passando: a referência da unidade, a branch, **a lista de achados CRITICAL e WARN verbatim** como peça de trabalho, e o caminho de `review-rules.md` — o implementador consulta ali o critério pelo código de cada achado. A lista de achados é o contrato dele; o mandato estreito já está escrito nas "Restrições absolutas" do arquivo dele — não repita nem invente um segundo contrato aqui. Peça de volta `IMPLEMENTADO` ou `ESCALAR`.
 
-Depois da correção, volte ao revisor — mas em modo **re-review incremental**, não review nova. Abra o worker `reviewer.md` passando: o caminho de `review-rules.md`, a lista verbatim dos achados da review anterior, o `git diff HEAD~1` da correção, e a instrução de seguir a seção "Re-review depois de uma correção", sem refazer a review completa.
+Depois da correção, volte ao revisor — mas em modo **re-review incremental**, não review nova. Abra o worker `reviewer.md` passando: o caminho de `review-rules.md`, a lista verbatim dos achados da review anterior, o diff da correção (`git diff <base da correção>..HEAD`), e a instrução de seguir a seção "Re-review depois de uma correção", sem refazer a review completa.
 
 Se a re-review voltar `LIMPO`, vá para 5. Se voltar `ACHADOS`, repita a arbitragem.
 
@@ -208,8 +218,10 @@ Se a re-review voltar `LIMPO`, vá para 5. Se voltar `ACHADOS`, repita a arbitra
 
 O ticket de follow-up nasce **top-level, sem pai**:
 
+Grave o corpo (o achado verbatim + link para o PR de origem) num arquivo em `.scratch/` e crie:
+
 ```bash
-gh issue create --title "[título curto do achado]" --body "[o achado verbatim + link para o PR de origem]" --label "ready-for-agent"
+gh issue create --title "[título curto do achado]" --body-file [arquivo] --label "ready-for-agent"
 ```
 
 Ele **não** entra na fronteira da SPEC corrente, **não** conta para a condição de abrir o PR, e é listado no corpo do PR com número e uma linha em português. Se nascesse como sub-issue da SPEC, o PR não abriria, a fronteira o pegaria, ele geraria review, que geraria achado, que geraria outro follow-up — o loop se alimentaria.
@@ -222,8 +234,10 @@ Ele **não** entra na fronteira da SPEC corrente, **não** conta para a condiç�
 
 Com tracker, registre a evidência e mova para `in-review`. **Não feche a issue** — ela fecha no merge, e quem a fecha é o GitHub.
 
+Grave num arquivo em `.scratch/` o comentário — "Implementado e aprovado", o commit, os achados do revisor (quantos, e se foram resolvidos) e o bloco `Checks` do retorno do implementer, colado label por label — e rode:
+
 ```bash
-gh issue comment [N] --body "Implementado e aprovado. Commit: [HASH] | Revisor: [N achados, todos resolvidos] | Gates: [cole aqui o bloco Checks do retorno do implementer, label por label]"
+gh issue comment [N] --body-file [arquivo]
 gh issue edit [N] --add-label "in-review" --remove-label "in-progress"
 ```
 
@@ -253,6 +267,20 @@ gh issue edit [N] --add-label "ready-for-human" --remove-label "in-progress"
 
 Adicionar sem remover deixa a issue com `ready-for-agent` + `in-progress` + `in-review` ao mesmo tempo, e a detecção de estado — que pergunta "algo em `in-progress`?" — fica verdadeira para sempre.
 
+**SPEC fatiada — espelho mínimo.** O `to-tickets` tira o `ready-for-agent` da SPEC, e sem espelho ela passaria o trabalho inteiro sem estado, indistinguível no quadro de uma issue nunca triada. Por isso ela anda em dois momentos, e só neles:
+
+| Quando | SPEC vai para |
+|---|---|
+| o primeiro ticket entra em `in-progress` | `in-progress` |
+| o PR abre | `in-review` |
+
+```bash
+gh issue edit [SPEC] --add-label "in-progress"
+gh issue edit [SPEC] --add-label "in-review" --remove-label "in-progress"
+```
+
+É espelho para quem olha o quadro, não estado de trabalho: a detecção de estado ignora a label da SPEC quando ela tem tickets. Bloqueio num ticket não mexe na SPEC — o Protocolo de Bloqueio já fala com o usuário diretamente.
+
 Não existe label `done`. Issue fechada já é a informação, e quem fecha é o GitHub.
 
 ---
@@ -265,7 +293,7 @@ Não existe label `done`. Issue fechada já é a informação, e quem fecha é o
 git push origin [BRANCH]
 ```
 
-Abra com `gh pr create --draft --base main`, título da unidade, e corpo contendo:
+Abra com `gh pr create --draft --base main --title "[título da unidade]" --body-file [arquivo]`. Com SPEC fatiada, mova a SPEC para `in-review` logo depois (ver "Transições de estado"). O corpo, gravado antes num arquivo em `.scratch/`, contém:
 
 - **`Closes #N`** — **uma linha por issue**, mais a da SPEC. A palavra-chave é **literal em inglês**: o GitHub só reconhece `close/closes/closed`, `fix/fixes/fixed`, `resolve/resolves/resolved`. Traduzir (`Fecha #27`) **falha em silêncio** — a linha é ignorada, o PR merga e as issues ficam abertas com o código na `main`. Já aconteceu. O resto do corpo continua em português. Omitir só sem tracker, que não tem issue.
 - **O que entrou** — a lista de unidades implementadas, ou a descrição do que foi acordado no grill
