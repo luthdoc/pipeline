@@ -14,10 +14,11 @@ Numa review nova, o prompt contém:
 
 1. O caminho de `review-rules.md` — os critérios universais
 2. Texto da unidade de trabalho (What to build + Acceptance criteria)
-3. Diff completo: `git diff HEAD~1`
-4. O **caminho** dos documentos de requisito que existirem — a cópia de trabalho da SPEC, sob `.scratch/`, e o `docs/prd.md` quando a SPEC declara ids de requisito em `## Covers`. Pode vir como "não disponível"; nesse caso trabalhe com o corpo da unidade, e não invente um caminho
+3. Diff completo da unidade, como o orquestrador o coletou — pode abranger mais de um commit
+4. A raiz absoluta do repositório — é a partir dela que você lê arquivos, mesmo que o seu diretório de trabalho seja outro
+5. O **caminho** dos documentos de requisito que existirem — a cópia de trabalho da SPEC, sob `.scratch/`, e o `docs/prd.md` quando a SPEC declara ids de requisito em `## Covers`. Pode vir como "não disponível"; nesse caso trabalhe com o corpo da unidade, e não invente um caminho
 
-Leia os documentos do item 4 você mesmo. Eles chegam por caminho e não colados porque o contexto do orquestrador é o único que persiste do começo ao fim do loop, ticket após ticket, e é o mais caro de encher.
+Leia os documentos do item 5 você mesmo. Eles chegam por caminho e não colados porque o contexto do orquestrador é o único que persiste do começo ao fim do loop, ticket após ticket, e é o mais caro de encher.
 
 **O que você não recebe é o raciocínio de quem implementou.** Isolamento do raciocínio ≠ isolamento do requisito: a SPEC não é raciocínio de ninguém — é a régua. Esconder a régua não protege independência, só cega a review. É por isso que o campo `## Covers` da SPEC existe: para você conferir cobertura contra o requisito em vez de confiar no texto do ticket.
 
@@ -37,7 +38,7 @@ Leia a unidade de trabalho palavra por palavra. Antes de abrir o diff, escreva p
 
 Este passo é o que produz o valor da review. Um revisor que lê o diff primeiro passa a validar o que já está lá em vez de julgar se era o que devia estar.
 
-Consulte `docs/agents/architecture.md` para saber onde cada coisa mora neste repo — a expectativa de "quais arquivos" depende disso.
+Consulte `docs/agents/architecture.md`, se existir, para saber onde cada coisa mora neste repo — a expectativa de "quais arquivos" depende disso.
 
 Se você recebeu o caminho da SPEC, **leia-a agora, antes do diff**, e em especial o campo `## Covers`. É o que transforma "o ticket foi cumprido?" em "o requisito foi entregue?".
 
@@ -129,7 +130,7 @@ Diff conforme todos os ACs.
 
 Uma re-review **não é uma review nova**. Você já formou expectativa e já percorreu os eixos; refazer isso do zero custa o mesmo que a primeira e não encontra nada novo, porque a correção só tocou o que você apontou.
 
-Você recebe: os achados que reportou, e o diff da correção (`git diff HEAD~1`).
+Você recebe: os achados que reportou, e o diff da correção, como o orquestrador o coletou.
 
 Verifique, nesta ordem:
 

@@ -268,7 +268,7 @@ function formatUserDisplayName(user: User) { ... }
 
 **Severidade: WARN.** O conserto é cirúrgico — uma linha na tabela "Onde cada coisa mora" — e não trava o loop.
 
-**Não é achado:** arquivo novo que é só mais uma instância de um padrão já documentado (uma rota, uma página); teste novo num seam que já existe; edição de arquivo existente que não muda camada, seam nem invariante.
+**Não é achado:** arquivo novo que é só mais uma instância de um padrão já documentado (uma rota, uma página); teste novo num seam que já existe; edição de arquivo existente que não muda camada, seam nem invariante; a simples ausência de `docs/agents/architecture.md` no repo quando o diff não faz mudança estrutural — o `setup-project` o gera, e o `implementer` o cria na primeira mudança estrutural.
 
 ---
 

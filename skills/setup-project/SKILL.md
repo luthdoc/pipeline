@@ -14,17 +14,29 @@ disable-model-invocation: true
 
 Você configura, uma vez por repositório, os contratos que o resto do pipeline lê em runtime. Sem eles as outras skills param com erro — de propósito, para falhar alto em vez de adivinhar.
 
-O output são dois arquivos, mais um opcional:
+O output são três arquivos, mais um opcional:
 
 - **arquivo de instruções** — três seções curtas: `## Issue Tracker`, `## Commands`, `## Fluxo`
 - **`docs/agents/issue-tracker.md`** — o detalhe pesado (comandos do tracker, tabela de labels)
-- **`docs/agents/review-rules-projeto.md`** *(opcional)* — critérios de review específicos do projeto (Parte 5)
+- **`docs/agents/architecture.md`** — o mapa do código que `to-spec`, `to-tickets`, `implementer` e revisor leem (Parte 5)
+- **`docs/agents/review-rules-projeto.md`** *(opcional)* — critérios de review específicos do projeto (Parte 6)
 
-**Qual é o arquivo de instruções:** `AGENTS.md` na raiz — o formato que a maioria das ferramentas de agente lê. Se o repo já tem `CLAUDE.md` e não tem `AGENTS.md`, use o `CLAUDE.md` existente em vez de criar um segundo arquivo. Se a ferramenta do usuário não carrega `AGENTS.md` sozinha, avise: o arquivo dela precisa apontar para o `AGENTS.md`, senão a seção `## Fluxo` não entra no contexto.
+**Qual é o arquivo de instruções:** `AGENTS.md` na raiz — o formato que a maioria das ferramentas de agente lê. Se o repo já tem `CLAUDE.md` e não tem `AGENTS.md`, use o `CLAUDE.md` existente em vez de criar um segundo arquivo.
+
+**Ferramenta que não lê `AGENTS.md` sozinha:** crie o ponteiro — não basta avisar, porque sem ele a seção `## Fluxo` nunca entra no contexto. Descubra a ferramenta pela pasta onde as skills do pipeline foram instaladas. Skills em `.claude/skills/` → é o Claude Code: crie `CLAUDE.md` na raiz com a linha `@AGENTS.md`, ou acrescente essa linha ao `CLAUDE.md` existente se ela faltar. Outra ferramenta com arquivo próprio → a mesma ideia, na convenção dela. Informe o que criou.
 
 O arquivo de instruções entra no contexto de toda conversa — mantê-lo enxuto importa. O detalhe fica isolado num arquivo que só quem precisa vai ler.
 
-Cinco partes, nesta ordem — a última opcional. Confirme com o usuário ao fim de cada uma antes de gravar.
+Seis partes, nesta ordem — a última opcional.
+
+**O que você pergunta, e o que não.** O dono do repositório pode não ler código. Pergunte só decisões de processo: qual tracker, qual vocabulário de labels, qual o limiar do `## Fluxo`. O que é técnico — comandos do tracker, script `clean`, mapa do código, critérios de review — você decide, grava e informa em uma linha, sem pedir aprovação de rascunho.
+
+## Portabilidade dos comandos — regra dura
+
+O pipeline roda em Bash e em PowerShell. Todo comando que você documentar — e todo comando que outra skill lê daqui — tem que rodar nos dois:
+
+- **Nada de composição de shell:** `||`, `&&`, `$(...)`, `2>/dev/null`, pipe, `VAR=...`. Quando um passo depende do resultado do anterior, documente como passos separados: "rode X, leia a saída, use-a em Y".
+- **Corpo de issue, comentário e PR vai por `--body-file <arquivo>`**, nunca `--body "..."`. Markdown tem crase, aspas, `$`, `!` e `&`, e escapar isso inline quebra de jeitos diferentes em cada shell. O arquivo fica em `.scratch/`.
 
 ## O modelo de artefatos
 
@@ -94,29 +106,39 @@ Comandos a documentar (com placeholders `{...}`):
 
 ```bash
 # Criar spec — devolve a URL da issue no stdout
-gh issue create --title "{title}" --body "{body}" --label "{label}"
+gh issue create --title "{title}" --body-file {arquivo} --label "{label}"
 
 # Node ID da spec (necessário para vincular sub-issues)
 gh issue view {spec-number} --json id -q .id
 
-# Criar ticket e vinculá-lo como sub-issue da spec
-TICKET_URL=$(gh issue create --title "{title}" --body "{body}" --label "{label}")
+# Criar ticket — devolve a URL do ticket no stdout; leia-a e use no passo seguinte
+gh issue create --title "{title}" --body-file {arquivo} --label "{label}"
+
+# Vincular o ticket como sub-issue da spec
 gh api graphql -f query='
   mutation($parent:ID!, $url:String!) {
     addSubIssue(input:{issueId:$parent, subIssueUrl:$url}) { clientMutationId }
-  }' -f parent="{spec-node-id}" -f url="$TICKET_URL"
+  }' -f parent={spec-node-id} -f url={ticket-url}
 
-# Listar os tickets de uma spec
+# Listar os tickets de uma spec (com o corpo, de onde sai o ## Blocked by)
 gh api graphql -f query='
   query($owner:String!, $repo:String!, $num:Int!) {
     repository(owner:$owner, name:$repo) {
       issue(number:$num) {
         subIssues(first:50) {
-          nodes { number title state labels(first:10){ nodes{ name } } }
+          nodes { number title state body labels(first:10){ nodes{ name } } }
         }
       }
     }
   }' -f owner={owner} -f repo={repo} -F num={spec-number}
+
+# Ver o pai (a spec) de um ticket — sem pai, parent vem null
+gh api graphql -f query='
+  query($owner:String!, $repo:String!, $num:Int!) {
+    repository(owner:$owner, name:$repo) {
+      issue(number:$num) { parent { number title } }
+    }
+  }' -f owner={owner} -f repo={repo} -F num={ticket-number}
 
 # Listar por label / ver / editar labels
 gh issue list --label "{label}"
@@ -124,7 +146,9 @@ gh issue view {number}
 gh issue edit {number} --add-label "{label}" --remove-label "{label}"
 ```
 
-`addSubIssue` aceita `subIssueUrl` no lugar do node ID do filho — por isso a URL que o `gh issue create` devolve serve direto, sem uma segunda consulta.
+`addSubIssue` aceita `subIssueUrl` no lugar do node ID do filho — por isso a URL que o `gh issue create` devolve serve direto, sem uma segunda consulta. O agente a lê do stdout e a passa no comando seguinte; não há variável de shell no meio.
+
+**Bloqueio entre tickets não usa relação nativa**, mesmo o GitHub tendo uma. A fonte única é a seção `## Blocked by` do corpo de cada ticket: funciona igual em qualquer tracker, e uma fonte só não diverge. Por isso a query de tickets traz o `body`.
 
 #### Markdown local (`.scratch/`)
 
@@ -139,22 +163,25 @@ gh issue edit {number} --add-label "{label}" --remove-label "{label}"
   - Listar: buscar `\*\*Status:\*\* {label}` em `.scratch/*/issues/*.md`
   - Ver: ler o arquivo correspondente
   - Editar label: editar o campo `**Status:**` no corpo do arquivo
+  - Vincular ticket à spec: gravar o ticket em `issues/` dentro da pasta da spec
+  - Listar tickets da spec: ler `.scratch/{feature-slug}/issues/*.md`
+  - Ver pai: a spec é `.scratch/{feature-slug}/spec.md`, na mesma pasta do ticket
 
-> ⚠️ **Sem orquestração AFK neste modo.** A skill `implement` gerencia estado por labels num tracker real e não lê `.scratch/`. Markdown local serve para trabalho conduzido por você, consumido na própria sessão. Avise o usuário disso ao confirmar a escolha.
+> ⚠️ **Sem orquestração AFK neste modo.** A skill `implement` gerencia estado por labels num tracker real; de `.scratch/` ela só lê a cópia de trabalho da SPEC, nunca o `**Status:**` dos tickets. Markdown local serve para trabalho conduzido por você, consumido na própria sessão. Avise o usuário disso ao confirmar a escolha.
 
 #### Linear
 
 - Confirme que o MCP do Linear está conectado (liste workspaces/times disponíveis para o usuário escolher).
-- Registre: workspace, team key, e os comandos/tools MCP usados para criar e listar issues, e como vincular um ticket como sub-issue da spec.
+- Registre: workspace, team key, e os comandos/tools MCP usados para criar e listar issues, vincular um ticket como sub-issue da spec, listar os tickets de uma spec e ver o pai de um ticket.
 
 #### Jira
 
 - Peça: base URL, project key, e método de autenticação já configurado (MCP ou API token).
-- Registre os comandos/tools equivalentes a criar, listar, ver e editar labels, e a relação pai-filho entre spec e tickets.
+- Registre os comandos/tools equivalentes a criar, listar, ver e editar labels, vincular ticket à spec, listar os tickets de uma spec e ver o pai de um ticket.
 
 #### Outro / customizado
 
-- Pergunte ao usuário os comandos equivalentes a criar, listar, ver, editar labels e vincular sub-issues neste sistema.
+- Descubra os comandos equivalentes a criar, listar, ver, editar labels, vincular ticket à spec, listar os tickets de uma spec e ver o pai de um ticket. Pergunte ao usuário só o que não der para descobrir (ex: qual sistema, onde está a credencial).
 
 ### 4. Definir o vocabulário de labels de triagem
 
@@ -193,11 +220,7 @@ gh label create "in-review" --color "5319E7" --description "Código na branch, a
 
 Ajuste os comandos ao vocabulário efetivamente confirmado — não à lista padrão, se o usuário customizou. Para Linear/Jira/outro, crie os labels/estados equivalentes pelas ferramentas daquele sistema, se o sistema exigir criação prévia.
 
-### 6. Confirmar antes de gravar
-
-Mostre ao usuário o rascunho dos dois arquivos (bloco do arquivo de instruções + conteúdo completo de `docs/agents/issue-tracker.md`). Deixe editar antes de gravar.
-
-### 7. Gravar
+### 6. Gravar
 
 **`docs/agents/issue-tracker.md`** — detalhe completo:
 
@@ -216,9 +239,14 @@ Tickets: [onde os tickets são publicados, e como se ligam à spec]
 
 Criar spec: [comando/operação exata com placeholders]
 Criar ticket: [comando/operação exata com placeholders]
+Vincular ticket à spec: [comando/operação exata com placeholders]
+Listar tickets da spec: [comando/operação exata com placeholders — traz estado, labels e corpo]
+Ver pai: [comando/operação exata com placeholders]
 Listar: [comando/operação exata com placeholders]
 Ver: [comando/operação exata com placeholders]
 Editar labels: [comando/operação exata com placeholders]
+
+Bloqueio entre tickets: seção `## Blocked by` do corpo — fonte única, sem relação nativa.
 
 ## Vocabulário de Labels
 
@@ -255,7 +283,7 @@ Leia o manifesto do projeto e extraia os comandos reais:
 | Go | `go vet`, `go build ./...`, `go test ./...` |
 | Python | `pyproject.toml` — `ruff`, `mypy`, `pytest` |
 
-Pergunte só o que ficar ambíguo. Repo com `test`, `test:watch` e `test:e2e` tem três candidatos e só um é o gate — aí sim pergunte qual.
+Ambiguidade também é sua de resolver, não do usuário. Repo com `test`, `test:watch` e `test:e2e` tem três candidatos e só um é o gate: escolha o que roda a suite inteira uma vez e termina — nunca o modo watch, que não termina, nem o e2e, lento demais para gate por task — e informe a escolha em uma linha.
 
 ### 1b. O quinto label: `clean`
 
@@ -263,7 +291,7 @@ Pergunte só o que ficar ambíguo. Repo com `test`, `test:watch` e `test:e2e` te
 
 Quem o usa: o `implement` roda `clean` no Bootstrap, antes de medir a baseline — é o que torna a foto honesta. E o `implementer` o roda uma vez, quando um gate fica vermelho apontando para arquivo que o diff dele não tocou, antes de escalar.
 
-Se o manifesto não tiver um script de limpeza, **crie um** e proponha ao usuário:
+Se o manifesto não tiver um script de limpeza, **crie um** e informe em uma linha o que ele apaga — é decisão técnica, não pede aprovação:
 
 | Stack | Proposta |
 |---|---|
@@ -346,11 +374,38 @@ Confirme o critério com o usuário antes de gravar: o limiar entre "implementa 
 
 ---
 
-## Parte 5 — Critérios de review do projeto (opcional)
+## Parte 5 — `docs/agents/architecture.md`
+
+O mapa do código para os agentes: `to-spec`, `to-tickets`, `implementer` e revisor o leem para não redescobrir o repo a cada execução. Não é documento para o dono ler; quem o mantém é o `implementer`, e quem cobra é o revisor (CL6).
+
+Se ele já existe, não reescreva. Senão, explore o código e grave, curto:
+
+```markdown
+# Arquitetura
+
+Mapa de módulos, seams de teste e invariantes deste repo. Documento vivo: o `implementer` o atualiza quando uma unidade cria módulo ou camada, move um seam, muda uma fronteira ou um invariante.
+
+## Onde cada coisa mora
+
+| Área | Módulo | Nota |
+|---|---|---|
+
+## Seams de teste
+
+[onde a lógica testável mora e onde os testes rodam; o seam preferido para código novo]
+
+## Invariantes
+
+[regras que nenhum lint pega e que o código respeita hoje — direção de dependência, fronteira servidor/cliente, onde input externo é validado]
+```
+
+Escreva só o que o código mostra hoje — não o que o PRD promete. Repo sem código ainda → grave só o esqueleto; o `implementer` preenche conforme os módulos nascem. Aponte para ele no arquivo de instruções, com uma linha fora das três seções do pipeline — ex: `Mapa do código (módulos, seams, invariantes): docs/agents/architecture.md`. Se já houver um ponteiro, não duplique. Informe em uma linha que o gravou.
+
+## Parte 6 — Critérios de review do projeto (opcional)
 
 O revisor aplica critérios universais — segurança, testes, limpeza, complexidade, code smells — que valem para qualquer stack. Critério que só faz sentido **neste** projeto (regras do framework, tokens do design system, convenções da casa) mora em `docs/agents/review-rules-projeto.md`, no formato dos universais: código, regra, por quê, como checar **por leitura**, severidade. O revisor o lê quando ele existe.
 
-Não crie o arquivo por padrão. Pergunte se a stack tem armadilhas que nenhum lint pega — se sim, proponha poucos critérios concretos; se não, pule. Um critério que exige executar algo não entra: vira label de `## Commands` ou passo da CI.
+Não crie o arquivo por padrão, e não pergunte ao usuário — "a stack tem armadilhas?" é pergunta de código. Decida você: se a stack tem armadilhas conhecidas que nenhum lint pega (ex: fronteira servidor/cliente num framework de SSR), grave poucos critérios concretos e informe; se não, pule. Um critério que exige executar algo não entra: vira label de `## Commands` ou passo da CI.
 
 ---
 
@@ -364,6 +419,8 @@ Ao finalizar, informe:
 > **Commands:** lint [Ns] · typecheck [Ns] · test [Ns] · build [Ns] · clean [Ns | não declarado]
 > **Fluxo:** gravado no arquivo de instruções.
 > **Remote:** [URL].
+> **Arquitetura:** `docs/agents/architecture.md` [gerado | esqueleto — repo sem código | já existia].
+> **Ponteiro:** [`CLAUDE.md` → `@AGENTS.md` criado | não necessário].
 > **Critérios do projeto:** [`docs/agents/review-rules-projeto.md` com N critérios | não criado].
 >
 > Próximo passo: `/to-spec` para registrar uma unidade de trabalho, ou `/implement`
