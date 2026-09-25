@@ -163,8 +163,11 @@ gh issue edit {number} --add-label "{label}" --remove-label "{label}"
   - Listar: buscar `\*\*Status:\*\* {label}` em `.scratch/*/issues/*.md`
   - Ver: ler o arquivo correspondente
   - Editar label: editar o campo `**Status:**` no corpo do arquivo
+  - Vincular ticket à spec: gravar o ticket em `issues/` dentro da pasta da spec
+  - Listar tickets da spec: ler `.scratch/{feature-slug}/issues/*.md`
+  - Ver pai: a spec é `.scratch/{feature-slug}/spec.md`, na mesma pasta do ticket
 
-> ⚠️ **Sem orquestração AFK neste modo.** A skill `implement` gerencia estado por labels num tracker real e não lê `.scratch/`. Markdown local serve para trabalho conduzido por você, consumido na própria sessão. Avise o usuário disso ao confirmar a escolha.
+> ⚠️ **Sem orquestração AFK neste modo.** A skill `implement` gerencia estado por labels num tracker real; de `.scratch/` ela só lê a cópia de trabalho da SPEC, nunca o `**Status:**` dos tickets. Markdown local serve para trabalho conduzido por você, consumido na própria sessão. Avise o usuário disso ao confirmar a escolha.
 
 #### Linear
 
@@ -280,7 +283,7 @@ Leia o manifesto do projeto e extraia os comandos reais:
 | Go | `go vet`, `go build ./...`, `go test ./...` |
 | Python | `pyproject.toml` — `ruff`, `mypy`, `pytest` |
 
-Pergunte só o que ficar ambíguo. Repo com `test`, `test:watch` e `test:e2e` tem três candidatos e só um é o gate — aí sim pergunte qual.
+Ambiguidade também é sua de resolver, não do usuário. Repo com `test`, `test:watch` e `test:e2e` tem três candidatos e só um é o gate: escolha o que roda a suite inteira uma vez e termina — nunca o modo watch, que não termina, nem o e2e, lento demais para gate por task — e informe a escolha em uma linha.
 
 ### 1b. O quinto label: `clean`
 
@@ -396,7 +399,7 @@ Mapa de módulos, seams de teste e invariantes deste repo. Documento vivo: o `im
 [regras que nenhum lint pega e que o código respeita hoje — direção de dependência, fronteira servidor/cliente, onde input externo é validado]
 ```
 
-Escreva só o que o código mostra hoje — não o que o PRD promete. Repo sem código ainda → grave só o esqueleto; o `implementer` preenche conforme os módulos nascem. Aponte para ele no arquivo de instruções (ver "O que o arquivo de instruções guarda"). Informe em uma linha que o gravou.
+Escreva só o que o código mostra hoje — não o que o PRD promete. Repo sem código ainda → grave só o esqueleto; o `implementer` preenche conforme os módulos nascem. Aponte para ele no arquivo de instruções, com uma linha fora das três seções do pipeline — ex: `Mapa do código (módulos, seams, invariantes): docs/agents/architecture.md`. Se já houver um ponteiro, não duplique. Informe em uma linha que o gravou.
 
 ## Parte 6 — Critérios de review do projeto (opcional)
 

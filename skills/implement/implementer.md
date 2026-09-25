@@ -29,7 +29,7 @@ Os comandos do projeto estão na seção `## Commands` do **arquivo de instruç�
 
    **RED** — escreva primeiro o teste que descreve o comportamento. Teste comportamento observável, nunca implementação: *"usuário recebe 401 ao acessar rota protegida sem token"*, não *"função `checkAuth` retorna false"*. Rode e confirme que **falha**. **Se passar antes de existir código de produção, o teste não está testando nada** — o comportamento já existe (e a task é outra) ou o teste está vazio/trivial. Corrija ou apague; não siga em frente com ele.
 
-   **Exceção — AC já satisfeito dentro da mesma peça.** Se o teste passa no RED porque uma task anterior desta peça, ou um ticket irmão já commitado na branch, implementou o comportamento, o teste não está vazio: ele trava um AC que ninguém mais trava. Mantenha-o como guarda de regressão, sem escrever código de produção, e **aponte o `arquivo:linha` que já satisfaz o AC** na linha dele em `AC→task`. O ponteiro é o que separa "já coberto" de "teste que não testa nada": se você não consegue apontar a linha, o teste é vazio e a regra acima vale. (O revisor confere o mesmo por conta própria, pelo teste de reversão mental do T1.) Comportamento que já existia antes da peça não entra aqui — aí vale a regra acima.
+   **Exceção — AC já satisfeito dentro da mesma peça.** Se o teste passa no RED porque uma task anterior desta peça, ou um ticket irmão já commitado na branch, implementou o comportamento, o teste não está vazio: ele trava um AC que ninguém mais trava. Mantenha-o como guarda de regressão, sem escrever código de produção, e **aponte o `arquivo:linha` que já satisfaz o AC** na linha dele em `AC→task`. O ponteiro é o que separa "já coberto" de "teste que não testa nada": se você não consegue apontar a linha, o teste é vazio e a regra acima vale. Comportamento que já existia antes da peça não entra aqui — aí vale a regra acima.
 
    **GREEN** — escreva o mínimo para o teste passar. Rode e confirme que passa sem regressão.
 
@@ -50,7 +50,7 @@ Os comandos do projeto estão na seção `## Commands` do **arquivo de instruç�
 
    **Gate vermelho que o seu diff não pode ter causado** — o arquivo apontado não foi tocado por você, o erro é sobre artefato de build, ou a baseline do brief já mostrava aquele gate vermelho: **rode o label `clean` de `## Commands`, se o projeto declarar, e repita o gate uma vez.** Ficou verde, siga normalmente. Continuou vermelho, ou o projeto não declara `clean` → pare e retorne `ESCALAR` com a saída do comando colada literal. Não tente consertar código que você não escreveu para calar um gate.
 
-5. **`architecture.md`** — se a unidade criou módulo ou camada nova, moveu um seam de teste, mudou uma fronteira que o documento lista (ex: servidor/cliente) ou mudou um invariante, atualize `docs/agents/architecture.md` **no mesmo commit**. É a única exceção à regra "nunca escreva o que nenhum AC pede", e ela é explícita: aquela regra fala de **código de produção**. O mapa do repo é infraestrutura do próprio processo — quatro etapas do pipeline o leem — `to-spec`, `to-tickets`, você e o revisor — para não precisarem redescobrir o repo, e ele apodrece se ninguém tiver a obrigação de mexer. Uma linha na tabela costuma bastar; não reescreva o documento. Se o arquivo não existir (repo configurado antes de o `setup-project` gerá-lo), crie-o só com as seções `## Onde cada coisa mora`, `## Seams de teste` e `## Invariantes`, preenchendo o que esta unidade tocou.
+5. **`architecture.md`** — se a unidade criou módulo ou camada nova, moveu um seam de teste, mudou uma fronteira que o documento lista (ex: servidor/cliente) ou mudou um invariante, atualize `docs/agents/architecture.md` **no mesmo commit**. É a única exceção à regra "nunca escreva o que nenhum AC pede", e ela é explícita: aquela regra fala de **código de produção**. O mapa do repo é infraestrutura do próprio processo — quatro etapas do pipeline o leem — `to-spec`, `to-tickets`, você e o revisor — para não precisarem redescobrir o repo, e ele apodrece se ninguém tiver a obrigação de mexer. Uma linha na tabela costuma bastar; não reescreva o documento. Se o arquivo não existir (repo configurado antes de o `setup-project` gerá-lo), crie-o com o título `# Arquitetura` e as seções `## Onde cada coisa mora` (tabela `| Área | Módulo | Nota |`), `## Seams de teste` e `## Invariantes`, preenchendo o que esta unidade tocou.
 
 6. **Build único, ao final** — depois que todas as tasks passaram pelo ciclo acima, rode o label `build` de `## Commands` **uma única vez** para a peça inteira. Se falhar, corrija e rode de novo até passar. Nunca pule este passo, mesmo com lint/typecheck/test verdes em toda task — o build cobra erros que o typecheck por arquivo não vê: import circular, path alias quebrado, erros de fronteira que só aparecem quando o bundler monta o todo.
 
@@ -61,7 +61,7 @@ Os comandos do projeto estão na seção `## Commands` do **arquivo de instruç�
    git commit -m "feat({ref}): [título da peça]"
    ```
 
-   Onde `{ref}` identifica a peça (número do ticket, número da issue).
+   Onde `{ref}` é `#N`, com o `#` — o número do ticket ou da issue (ex: `feat(#42): ...`). O formato não é estético: o orquestrador acha os commits da unidade buscando `(#N)` no log, ao retomar um trabalho interrompido. Sem tracker, use o slug da branch.
 
 ## Restrições absolutas
 

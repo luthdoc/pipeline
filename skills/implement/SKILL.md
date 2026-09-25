@@ -74,6 +74,12 @@ Verifique antes de qualquer outra coisa. Pare em qualquer hard stop.
 
 — ENCERRA
 
+Se o `issue-tracker.md` existe mas não tem o comando "Listar tickets da spec" (repo configurado por uma versão anterior do pipeline):
+
+> ⛔ `docs/agents/issue-tracker.md` está desatualizado: falta "Listar tickets da spec". Rode `/setup-project` para reconfigurar o tracker.
+
+— ENCERRA
+
 Verifique a autenticação (ex: `gh auth status`). Se falhar, instrua o login e ENCERRA. Crie as labels do vocabulário que não existirem (idempotente).
 
 **Remote.** `git remote -v` — se não houver remote, ENCERRA pedindo que seja criado; sem ele não há PR.
@@ -275,9 +281,11 @@ Adicionar sem remover deixa a issue com `ready-for-agent` + `in-progress` + `in-
 | o PR abre | `in-review` |
 
 ```bash
-gh issue edit [SPEC] --add-label "in-progress"
+gh issue edit [SPEC] --add-label "in-progress" --remove-label "ready-for-agent"
 gh issue edit [SPEC] --add-label "in-review" --remove-label "in-progress"
 ```
+
+A primeira linha também remove `ready-for-agent`, para o caso de a SPEC ter sido fatiada sem o `to-tickets` tirar a label — o espelho segue a mesma regra de exclusividade que os tickets.
 
 É espelho para quem olha o quadro, não estado de trabalho: a detecção de estado ignora a label da SPEC quando ela tem tickets. Bloqueio num ticket não mexe na SPEC — o Protocolo de Bloqueio já fala com o usuário diretamente.
 

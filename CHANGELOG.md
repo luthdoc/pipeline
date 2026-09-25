@@ -13,7 +13,8 @@ Correções dos 11 WARN do audit de ponta a ponta sobre a 0.1.0.
 - **Workers:** recebem a raiz absoluta do repositório.
 - **Claude Code:** o `setup-project` cria `CLAUDE.md` com `@AGENTS.md` quando as skills estão em `.claude/skills/`.
 - **Sem perguntas de código ao humano:** seams (`to-spec`), quebra em tickets (`to-tickets`), script `clean` e critérios de projeto (`setup-project`) são decididos pelo agente e informados.
-- **RED:** um AC já satisfeito por task anterior da mesma peça mantém o teste como guarda de regressão, com o `arquivo:linha` no retorno.
+- **RED:** um AC já satisfeito por task anterior da mesma peça, ou por ticket irmão já na branch, mantém o teste como guarda de regressão, com o `arquivo:linha` no retorno.
+- Commit do implementer fixado em `feat(#N)` / `fix(#N)`, formato de que a retomada depende. CL6 não acusa a simples ausência do `architecture.md`. O `implement` para se o `issue-tracker.md` for de versão anterior.
 
 ## 0.1.0 — 2026-09-24
 
