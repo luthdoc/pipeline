@@ -15,17 +15,17 @@ Read the `## Issue Tracker` section of the project's instructions file (`AGENTS.
 
 ## Process
 
-1. Explore the repo to understand the current state of the codebase, if you haven't already. Read `docs/agents/architecture.md` first — it carries the module map, the test seams, and the invariants of this repo. Use its vocabulary throughout the spec, and respect the invariants in the area you're touching.
+1. Explore the repo to understand the current state of the codebase, if you haven't already. Read `docs/agents/architecture.md` first, if it exists — it carries the module map, the test seams, and the invariants of this repo. Use its vocabulary throughout the spec, and respect the invariants in the area you're touching.
 
    **Then read `docs/prd.md`, if it exists.** It is the source of truth for the product and its requirements, and it is where the requirement ids for `## Covers` come from — that field asks for `FR3`, `NFR2`, … and is unfillable without it. Find the requirements this spec delivers and list their ids. If there is no PRD, write "Standalone — no PRD" and say so to the user; if there is one but nothing in it matches, say that too — it usually means the work is real but the PRD is behind.
 
 2. Sketch out the seams at which you're going to test the feature. Existing seams should be preferred to new ones. Use the highest seam possible. If new seams are needed, propose them at the highest point you can. The fewer seams across the codebase, the better - the ideal number is one.
 
-Check with the user that these seams match their expectations.
+Decide the seams yourself and record them under Testing Decisions — do not ask the user to approve them. The owner may not read code, and a seam is a code decision; the pipeline only escalates product and risk decisions to a human.
 
-3. Write the spec using the template below, then publish it to the project issue tracker. Apply the `ready-for-agent` triage label - no need for additional triage.
+3. Write the spec using the template below to `.scratch/<spec-slug>/spec.md`, then publish it to the project issue tracker **from that file** (`--body-file` or the tracker's equivalent — never an inline `--body "..."`: markdown carries backticks, quotes, `$` and `!`, which break inline quoting differently in Bash and PowerShell). Apply the `ready-for-agent` triage label - no need for additional triage.
 
-4. Write a working copy to `.scratch/<spec-slug>/spec.md` — same content, plus the issue number on the **first line**, in the form `#<N>`. That line is not decoration: `implement` locates this file by searching for the issue number, because the slug is not derivable from the issue. The file is gitignored and disposable; the issue is canonical. If they ever diverge, the issue wins.
+4. Insert the issue number on the **first line** of `.scratch/<spec-slug>/spec.md`, in the form `#<N>`, now that it exists. That line is not decoration: `implement` locates this file by searching for the issue number, because the slug is not derivable from the issue. The file is gitignored and disposable; the issue is canonical. If they ever diverge, the issue wins.
 
 5. Say whether the spec fits one context window as a single unit of work. If it does, tell the user they can run `/implement <issue>` directly. If it doesn't, point at `/to-tickets <issue>` — that skill owns the slicing decision, not this one.
 
