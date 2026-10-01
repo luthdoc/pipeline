@@ -144,6 +144,9 @@ gh api graphql -f query='
 gh issue list --label "{label}"
 gh issue view {number}
 gh issue edit {number} --add-label "{label}" --remove-label "{label}"
+
+# Fechar (ticket aprovado)
+gh issue close {number} --reason completed
 ```
 
 `addSubIssue` aceita `subIssueUrl` no lugar do node ID do filho — por isso a URL que o `gh issue create` devolve serve direto, sem uma segunda consulta. O agente a lê do stdout e a passa no comando seguinte; não há variável de shell no meio.
@@ -163,6 +166,7 @@ gh issue edit {number} --add-label "{label}" --remove-label "{label}"
   - Listar: buscar `\*\*Status:\*\* {label}` em `.scratch/*/issues/*.md`
   - Ver: ler o arquivo correspondente
   - Editar label: editar o campo `**Status:**` no corpo do arquivo
+  - Fechar: editar o campo `**Status:**` para `closed`
   - Vincular ticket à spec: gravar o ticket em `issues/` dentro da pasta da spec
   - Listar tickets da spec: ler `.scratch/{feature-slug}/issues/*.md`
   - Ver pai: a spec é `.scratch/{feature-slug}/spec.md`, na mesma pasta do ticket
@@ -177,11 +181,11 @@ gh issue edit {number} --add-label "{label}" --remove-label "{label}"
 #### Jira
 
 - Peça: base URL, project key, e método de autenticação já configurado (MCP ou API token).
-- Registre os comandos/tools equivalentes a criar, listar, ver e editar labels, vincular ticket à spec, listar os tickets de uma spec e ver o pai de um ticket.
+- Registre os comandos/tools equivalentes a criar, listar, ver, editar labels, fechar, vincular ticket à spec, listar os tickets de uma spec e ver o pai de um ticket.
 
 #### Outro / customizado
 
-- Descubra os comandos equivalentes a criar, listar, ver, editar labels, vincular ticket à spec, listar os tickets de uma spec e ver o pai de um ticket. Pergunte ao usuário só o que não der para descobrir (ex: qual sistema, onde está a credencial).
+- Descubra os comandos equivalentes a criar, listar, ver, editar labels, fechar, vincular ticket à spec, listar os tickets de uma spec e ver o pai de um ticket. Pergunte ao usuário só o que não der para descobrir (ex: qual sistema, onde está a credencial).
 
 ### 4. Definir o vocabulário de labels de triagem
 
@@ -192,15 +196,15 @@ Vocabulário padrão sugerido — apresente ao usuário para confirmação ou aj
 | `ready-for-agent` | Pronta para um agente autônomo (AFK) implementar sem supervisão |
 | `ready-for-human` | Bloqueada — aguardando decisão ou ação humana |
 | `needs-triage` | Ainda não avaliada por um maintainer |
-| `in-progress` | Agente trabalhando |
-| `in-review` | Código na branch, aprovado pelo revisor, aguardando merge |
+| `in-progress` | Agente no loop — implementando ou em review |
+| `in-review` | PR aberto, aguardando merge (só SPEC ou issue sem tickets) |
 
 `ready-for-agent` é obrigatória — é a label que `to-spec` e `to-tickets` aplicam ao publicar, e é por ela que o `implement` encontra trabalho. As demais podem ser removidas, renomeadas, ou o usuário pode adicionar outras (ex: `wontfix` para issues rejeitadas, `needs-info` para issues que precisam de mais contexto antes de triar).
 
 **Duas propriedades deste vocabulário não são negociáveis:**
 
 - **Os estados são exclusivos.** Um card anda entre colunas, não acumula colunas. Toda transição remove o estado anterior. Adicionar sem remover deixa a issue em `ready-for-agent` + `in-progress` + `in-review` ao mesmo tempo, e a detecção de estado do `implement` — que pergunta "algo em `in-progress`?" — fica verdadeira para sempre.
-- **Não existe label de "concluída".** Issue fechada já é essa informação, e quem a fecha é o próprio tracker, no merge, pelo `Closes #N` do corpo do PR. Uma label `done` duplica o que o GitHub já sabe e exige alguém para mantê-la — é mais um estado para desincronizar. Por isso `in-review` foi redefinida: de "PR aberto" para "código na branch, aguardando merge". É o que de fato acontece, porque o ticket termina antes de o PR existir — o PR é por SPEC, não por ticket. A definição antiga descrevia um estado que o pipeline nunca produz.
+- **Não existe label de "concluída".** Issue fechada já é essa informação. Uma label `done` duplica o que o tracker já sabe e exige alguém para mantê-la — é mais um estado para desincronizar. Quem fecha depende do que a issue é: o **ticket** é fechado pelo `implement` assim que o revisor aprova, e é isso que faz o progresso de sub-issues da SPEC andar durante a execução; a **SPEC** (ou a issue sem tickets) fecha no merge, pelo `Closes #N` do corpo do PR. Por isso `in-review` só aparece em SPEC ou issue sem tickets: um ticket vai de `in-progress` direto para fechado. A review é parte do loop e não ganha label própria.
 
 Este é o **único** vocabulário de labels do pipeline. Nenhum agente define o seu próprio — `implement` e `reviewer` leem daqui.
 
@@ -215,7 +219,7 @@ gh label create "ready-for-agent" --color "0E8A16" --description "Pronta para ag
 gh label create "ready-for-human" --color "D93F0B" --description "Bloqueada, aguardando ação humana" --force
 gh label create "needs-triage" --color "FBCA04" --description "Ainda não avaliada por um maintainer" --force
 gh label create "in-progress" --color "1D76DB" --description "Em desenvolvimento" --force
-gh label create "in-review" --color "5319E7" --description "Código na branch, aguardando merge" --force
+gh label create "in-review" --color "5319E7" --description "PR aberto, aguardando merge" --force
 ```
 
 Ajuste os comandos ao vocabulário efetivamente confirmado — não à lista padrão, se o usuário customizou. Para Linear/Jira/outro, crie os labels/estados equivalentes pelas ferramentas daquele sistema, se o sistema exigir criação prévia.
@@ -245,6 +249,7 @@ Ver pai: [comando/operação exata com placeholders]
 Listar: [comando/operação exata com placeholders]
 Ver: [comando/operação exata com placeholders]
 Editar labels: [comando/operação exata com placeholders]
+Fechar: [comando/operação exata com placeholders]
 
 Bloqueio entre tickets: seção `## Blocked by` do corpo — fonte única, sem relação nativa.
 

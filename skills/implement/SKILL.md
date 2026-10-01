@@ -153,16 +153,16 @@ Leia a unidade e, se ela tiver tickets, todos eles, pelos comandos de `docs/agen
 Estado:
 
 - **Algo em `ready-for-human`** → para, reporta Protocolo de Bloqueio
-- **Algo em `in-progress`** → retoma essa unidade, re-executando o loop dela. **`in-review` não retoma** — significa pronto, aguardando merge; não mexer.
+- **Algo em `in-progress`** → retoma essa unidade, re-executando o loop dela.
 - **Há unidade na fronteira** → roda o Loop
-- **Todos os tickets da unidade em `in-review` ou fechados, e sem PR** → abre o PR
+- **Todos os tickets fechados** (SPEC com tickets) **ou a issue em `in-review`** (unidade sem tickets), **e sem PR** → abre o PR
 - **PR aberto** → concluído
 
-**A fronteira** é o conjunto de tickets cujos bloqueadores estão **todos** em `in-review` ou fechados. Ticket sem bloqueador está na fronteira desde o início; numa cadeia linear, a fronteira é sempre um ticket, de cima para baixo. **A fonte do bloqueio é a seção `## Blocked by` do corpo de cada ticket, e só ela** — mesmo que o tracker tenha relação de bloqueio nativa. Uma fonte só não diverge, e funciona igual em qualquer tracker. Recalcule a cada ticket concluído.
+**A fronteira** é o conjunto de tickets abertos cujos bloqueadores estão **todos** fechados. Ticket sem bloqueador está na fronteira desde o início; numa cadeia linear, a fronteira é sempre um ticket, de cima para baixo. **A fonte do bloqueio é a seção `## Blocked by` do corpo de cada ticket, e só ela** — mesmo que o tracker tenha relação de bloqueio nativa. Uma fonte só não diverge, e funciona igual em qualquer tracker. Recalcule a cada ticket concluído.
 
 Numa unidade sem tickets, a fronteira é a própria issue. Sem tracker não há fronteira.
 
-> **`in-review` é o sinal único de conclusão de um ticket.** Ver "Transições de estado".
+> **Ticket fechado é o sinal único de conclusão de um ticket.** Ver "Transições de estado".
 
 ---
 
@@ -199,7 +199,7 @@ Abra o worker `reviewer.md` em modo **review nova**, passando:
 
 **Nunca passe as notas do implementador ao revisor.** A independência dele é o que torna a review valiosa. Isso vale para o **raciocínio** de quem implementou, não para o **requisito**: a SPEC não é raciocínio de ninguém, é a régua, e esconder a régua não protege independência — só cega a review.
 
-Com tracker, **não mova a label aqui**. `in-review` significa "código na branch, aprovado pelo revisor, aguardando merge" — ela entra no passo 5, depois da aprovação, não antes dela.
+Com tracker, **não mova a label aqui**. A review é parte do loop: a unidade segue em `in-progress` até a aprovação, no passo 5. Uma label própria para a review trocaria a cada rodada de correção e não muda nenhuma decisão.
 
 ### 4 — Arbitragem
 
@@ -238,14 +238,26 @@ Ele **não** entra na fronteira da SPEC corrente, **não** conta para a condiç�
 
 ### 5 — Concluir a unidade
 
-Com tracker, registre a evidência e mova para `in-review`. **Não feche a issue** — ela fecha no merge, e quem a fecha é o GitHub.
-
-Grave num arquivo em `.scratch/` o comentário — "Implementado e aprovado", o commit, os achados do revisor (quantos, e se foram resolvidos) e o bloco `Checks` do retorno do implementer, colado label por label — e rode:
+Com tracker, registre a evidência e encerre o estado da unidade. Grave num arquivo em `.scratch/` o comentário — "Implementado e aprovado", o commit, os achados do revisor (quantos, e se foram resolvidos) e o bloco `Checks` do retorno do implementer, colado label por label — e rode:
 
 ```bash
 gh issue comment [N] --body-file [arquivo]
-gh issue edit [N] --add-label "in-review" --remove-label "in-progress"
 ```
+
+Depois, conforme o que a unidade é:
+
+- **Ticket (tem pai)** → **feche o ticket agora**, sem esperar o merge. É o que faz a barra de progresso de sub-issues da SPEC andar ticket a ticket; deixado aberto até o merge, ela fica em 0/N a execução inteira. Quem passa a esperar o merge é a SPEC, que segue aberta e fecha pelo `Closes` do PR.
+
+  ```bash
+  gh issue edit [N] --remove-label "in-progress"
+  gh issue close [N] --reason completed
+  ```
+
+- **Issue sem pai e sem tickets** → mova para `in-review`. Ela é o alvo do PR: fecha no merge, e quem a fecha é o GitHub.
+
+  ```bash
+  gh issue edit [N] --add-label "in-review" --remove-label "in-progress"
+  ```
 
 **Cole a evidência que você recebeu; não parafraseie.** O resultado por label vem do worker que o executou — você não mediu nada durante o loop e não tem de onde tirar um número. Se um dado não veio, escreva **"não reportado"**. Nunca preencha com o plausível: um PR que diz "não reportado" é honesto e conserta-se; um PR que inventa `test ok (56 passed)` é indistinguível de um PR verdadeiro.
 
@@ -260,18 +272,22 @@ Um card **anda** entre estados, não acumula colunas. **Toda transição remove 
 | Estado | Significa | Quem move |
 |---|---|---|
 | `ready-for-agent` | pegável | `to-spec` / `to-tickets` |
-| `in-progress` | agente trabalhando | você, ao começar |
-| `in-review` | código na branch, aprovado pelo revisor, aguardando merge | você, ao aprovar |
-| *(fechada)* | está na `main` | **GitHub, no merge** |
+| `in-progress` | agente no loop — implementando ou em review | você, ao começar |
+| `in-review` | PR aberto, aguardando merge — **só SPEC ou issue sem tickets** | você, ao aprovar a issue sem tickets / ao abrir o PR da SPEC |
+| *(fechada)* | ticket: aprovado pelo revisor, código na branch · SPEC ou issue sem tickets: está na `main` | ticket: **você, ao aprovar** · resto: **GitHub, no merge** |
 | `ready-for-human` | bloqueada | você, no Protocolo de Bloqueio |
+
+Um ticket nunca recebe `in-review`: o caminho dele é `ready-for-agent` → `in-progress` → fechado.
 
 ```bash
 gh issue edit [N] --add-label "in-progress"  --remove-label "ready-for-agent"
-gh issue edit [N] --add-label "in-review"    --remove-label "in-progress"
+gh issue edit [N] --remove-label "in-progress"            # ticket aprovado, antes de fechar
+gh issue close [N] --reason completed                      # ticket aprovado
+gh issue edit [N] --add-label "in-review"    --remove-label "in-progress"   # issue sem tickets aprovada
 gh issue edit [N] --add-label "ready-for-human" --remove-label "in-progress"
 ```
 
-Adicionar sem remover deixa a issue com `ready-for-agent` + `in-progress` + `in-review` ao mesmo tempo, e a detecção de estado — que pergunta "algo em `in-progress`?" — fica verdadeira para sempre.
+Adicionar sem remover deixa a issue com `ready-for-agent` + `in-progress` + `in-review` ao mesmo tempo, e a detecção de estado — que pergunta "algo em `in-progress`?" — fica verdadeira para sempre. Vale também ao fechar: ticket fechado com `in-progress` aparece no quadro como trabalho em andamento.
 
 **SPEC fatiada — espelho mínimo.** O `to-tickets` tira o `ready-for-agent` da SPEC, e sem espelho ela passaria o trabalho inteiro sem estado, indistinguível no quadro de uma issue nunca triada. Por isso ela anda em dois momentos, e só neles:
 
@@ -289,13 +305,13 @@ A primeira linha também remove `ready-for-agent`, para o caso de a SPEC ter sid
 
 É espelho para quem olha o quadro, não estado de trabalho: a detecção de estado ignora a label da SPEC quando ela tem tickets. Bloqueio num ticket não mexe na SPEC — o Protocolo de Bloqueio já fala com o usuário diretamente.
 
-Não existe label `done`. Issue fechada já é a informação, e quem fecha é o GitHub.
+Não existe label `done`. Issue fechada já é a informação.
 
 ---
 
 ## Abrir o PR
 
-**Quando:** com tracker, o PR só abre quando a **SPEC inteira** fecha — todos os tickets em `in-review` ou fechados. Ticket cujo pai ainda tem irmãos abertos: dê push na branch, reporte o que falta, e **não abra PR**. Senão a SPEC chega na `main` em pedaços.
+**Quando:** com tracker, o PR só abre quando a **SPEC inteira** fecha — todos os tickets fechados. Ticket cujo pai ainda tem irmãos abertos: dê push na branch, reporte o que falta, e **não abra PR**. Senão a SPEC chega na `main` em pedaços.
 
 ```bash
 git push origin [BRANCH]
@@ -303,7 +319,7 @@ git push origin [BRANCH]
 
 Abra com `gh pr create --draft --base main --title "[título da unidade]" --body-file [arquivo]`. Com SPEC fatiada, mova a SPEC para `in-review` logo depois (ver "Transições de estado"). O corpo, gravado antes num arquivo em `.scratch/`, contém:
 
-- **`Closes #N`** — **uma linha por issue**, mais a da SPEC. A palavra-chave é **literal em inglês**: o GitHub só reconhece `close/closes/closed`, `fix/fixes/fixed`, `resolve/resolves/resolved`. Traduzir (`Fecha #27`) **falha em silêncio** — a linha é ignorada, o PR merga e as issues ficam abertas com o código na `main`. Já aconteceu. O resto do corpo continua em português. Omitir só sem tracker, que não tem issue.
+- **`Closes #N`** — da SPEC, ou da issue quando a unidade não tem tickets. Os tickets já estão fechados; liste-os em "O que entrou", não em `Closes`. A palavra-chave é **literal em inglês**: o GitHub só reconhece `close/closes/closed`, `fix/fixes/fixed`, `resolve/resolves/resolved`. Traduzir (`Fecha #27`) **falha em silêncio** — a linha é ignorada, o PR merga e as issues ficam abertas com o código na `main`. Já aconteceu. O resto do corpo continua em português. Omitir só sem tracker, que não tem issue.
 - **O que entrou** — a lista de unidades implementadas, ou a descrição do que foi acordado no grill
 - **Evidência por unidade** — commit, achados do revisor, e em quantos loops foram resolvidos
 - **Gates finais** — o bloco `Checks` do retorno do `implementer`, **colado**, label por label; `não reportado` para o que não veio

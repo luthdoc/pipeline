@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 — 2026-10-01
+
+- **Ticket fecha na aprovação:** o `implement` fecha o ticket (`--reason completed`) assim que o revisor aprova, em vez de deixá-lo em `in-review` até o merge. A barra de progresso de sub-issues da SPEC passa a andar ticket a ticket. A SPEC segue aberta e fecha pelo `Closes` do PR, que agora referencia só a SPEC (ou a issue sem tickets).
+- **`in-review` só em SPEC ou issue sem tickets:** significa "PR aberto, aguardando merge". Ticket vai de `in-progress` direto para fechado; a review é parte do loop e não ganha label.
+- **Fronteira e detecção:** bloqueador concluído é bloqueador fechado. O PR abre com todos os tickets fechados.
+- **Contrato do tracker:** ganha o comando "Fechar".
+
 ## 0.2.0 — 2026-09-24
 
 Correções dos 11 WARN do audit de ponta a ponta sobre a 0.1.0.
