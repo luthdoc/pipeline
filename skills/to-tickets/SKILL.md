@@ -61,7 +61,7 @@ Publish the tickets. **How** depends on the tracker `/setup-project` configured 
 
   Then **insert the issue number on the first line of each ticket's working copy, and write the spec to `.scratch/<spec-slug>/spec.md` if it isn't there already** — same content as the issue, plus the issue number on the first line, in the form `#<N>`, so `implement` can find the file by issue number instead of reconstructing the slug. Use the same `<spec-slug>` `to-spec` used; if the spec folder already exists, write into it. This is not local-mode duplication: `.scratch/` is gitignored and disposable, the issue stays canonical, and if the two ever diverge the issue wins. It exists because `implement` hands the reviewer the *path* to the spec rather than pasting its text, and without the file there is no path to hand. `/setup-project` already declares that both skills write this copy; without this step that declaration is false.
 
-Work the **frontier**: any ticket whose blockers are all in `in-review` or closed. For a purely linear chain that means top to bottom.
+Work the **frontier**: any open ticket whose blockers are all closed. For a purely linear chain that means top to bottom. `implement` closes each ticket as soon as its review passes.
 
 After publishing, show the user the breakdown in plain product language — one line per ticket saying what it makes work, and the order. This is information, not a request for approval; if the user wants a change, apply it.
 
