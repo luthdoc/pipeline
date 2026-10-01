@@ -197,7 +197,7 @@ Vocabulário padrão sugerido — apresente ao usuário para confirmação ou aj
 | `ready-for-human` | Bloqueada — aguardando decisão ou ação humana |
 | `needs-triage` | Ainda não avaliada por um maintainer |
 | `in-progress` | Agente no loop — implementando ou em review |
-| `in-review` | PR aberto, aguardando merge (só SPEC ou issue sem tickets) |
+| `in-review` | Aprovada pelo revisor, aguardando merge (só SPEC ou issue sem tickets) |
 
 `ready-for-agent` é obrigatória — é a label que `to-spec` e `to-tickets` aplicam ao publicar, e é por ela que o `implement` encontra trabalho. As demais podem ser removidas, renomeadas, ou o usuário pode adicionar outras (ex: `wontfix` para issues rejeitadas, `needs-info` para issues que precisam de mais contexto antes de triar).
 
@@ -218,8 +218,8 @@ Para GitHub Issues, crie (idempotente, `--force` sobrescreve se já existir) as 
 gh label create "ready-for-agent" --color "0E8A16" --description "Pronta para agente autônomo implementar" --force
 gh label create "ready-for-human" --color "D93F0B" --description "Bloqueada, aguardando ação humana" --force
 gh label create "needs-triage" --color "FBCA04" --description "Ainda não avaliada por um maintainer" --force
-gh label create "in-progress" --color "1D76DB" --description "Em desenvolvimento" --force
-gh label create "in-review" --color "5319E7" --description "PR aberto, aguardando merge" --force
+gh label create "in-progress" --color "1D76DB" --description "Agente no loop: implementação e review" --force
+gh label create "in-review" --color "5319E7" --description "Aprovada, aguardando merge (SPEC ou issue sem tickets)" --force
 ```
 
 Ajuste os comandos ao vocabulário efetivamente confirmado — não à lista padrão, se o usuário customizou. Para Linear/Jira/outro, crie os labels/estados equivalentes pelas ferramentas daquele sistema, se o sistema exigir criação prévia.

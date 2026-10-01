@@ -6,6 +6,7 @@
 - **`in-review` só em SPEC ou issue sem tickets:** significa "PR aberto, aguardando merge". Ticket vai de `in-progress` direto para fechado; a review é parte do loop e não ganha label.
 - **Fronteira e detecção:** bloqueador concluído é bloqueador fechado. O PR abre com todos os tickets fechados.
 - **Contrato do tracker:** ganha o comando "Fechar".
+- **Retomada:** ticket com o comentário "Implementado e aprovado" do `HEAD` só conclui o passo 5, sem refazer o loop. Ticket aberto em `in-review`, deixado pela 0.2.0, é fechado na detecção.
 
 ## 0.2.0 — 2026-09-24
 
