@@ -152,12 +152,15 @@ Leia a unidade e, se ela tiver tickets, todos eles, pelos comandos de `docs/agen
 
 **Ticket fechado é concluído, qualquer label que tenha** — só tickets abertos entram nas regras abaixo. Um ticket passado direto (`/implement 52`) que já está fechado não é retrabalho: resolva a SPEC pai e siga por ela.
 
-Antes de aplicar as regras, **feche todo ticket aberto em `in-review`** (`--remove-label "in-review"` e fechar, como no passo 5). É o que a versão anterior do pipeline deixava ao aprovar um ticket; sem isso, a fronteira nunca anda e nenhum estado abaixo casa.
+Antes de aplicar as regras, faça duas limpezas:
+
+- **Feche todo ticket aberto em `in-review`** — fechar primeiro, depois `--remove-label "in-review"`, na mesma ordem do passo 5. É o que a versão anterior do pipeline deixava ao aprovar um ticket; sem isso, a fronteira nunca anda e nenhum estado abaixo casa.
+- **Tire `in-progress` de ticket já fechado** — é o resíduo de uma queda entre fechar e tirar a label no passo 5. Não muda a detecção, mas no quadro o ticket aparece como trabalho em andamento.
 
 Estado:
 
 - **Algo em `ready-for-human`** → para, reporta Protocolo de Bloqueio
-- **Algo aberto em `in-progress`** → retoma essa unidade. **Antes de re-executar o loop, leia os comentários da issue:** se o último é o "Implementado e aprovado" do passo 5 e o commit citado nele é o `HEAD` da unidade, a queda foi depois da aprovação — só conclua o passo 5, sem implementar nem revisar de novo. Senão, re-execute o loop dela.
+- **Algo aberto em `in-progress`** → retoma essa unidade. **Antes de re-executar o loop, leia os comentários da issue:** se o último é o "Implementado e aprovado" do passo 5 e o commit citado nele é o `HEAD` da branch, a queda foi depois da aprovação — só conclua o passo 5, sem implementar nem revisar de novo. Senão, re-execute o loop dela.
 - **Há unidade na fronteira** → roda o Loop
 - **Todos os tickets fechados** (SPEC com tickets) **ou a issue em `in-review`** (issue sem pai e sem tickets), **e sem PR** → abre o PR
 - **PR aberto** → concluído
