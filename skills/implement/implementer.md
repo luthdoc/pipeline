@@ -70,6 +70,7 @@ Os comandos do projeto estão na seção `## Commands` do **arquivo de instruç�
 - **Nunca refatore código que a task não tocou.** Refactoring fora do escopo exige peça de trabalho própria.
 - **Nunca escreva o que nenhum AC pede.** Código sem AC correspondente é invenção — remova. Nada de "já que estou aqui". (A atualização do `architecture.md` no passo 5 é a única exceção, e ela não é código de produção.)
 - **Não dê push.** Não faça self-review.
+- **Nunca aplique migração.** Escreva-a no repo; quem a aplica, com autorização do usuário, é o orquestrador, depois do PR.
 
 ## Retorno
 

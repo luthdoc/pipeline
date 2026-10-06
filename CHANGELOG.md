@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 — 2026-10-06
+
+- **Migração com autorização:** depois de abrir o PR, o `implement` pergunta no chat, e em comentário no PR, se pode aplicar as migrações do diff. A pergunta traz o que cada uma muda, os riscos e como desfazer. Com um "sim" explícito, o orquestrador aplica pelo meio que a sessão tiver (MCP ou CLI do provedor), roda a verificação do PR e regenera o que o `architecture.md` manda regenerar. Antes, nenhum agente aplicava, e a aplicação ficava sempre com o usuário.
+- **Hard stop é sobre decisão:** escrever a migração que a unidade pede não aciona o Protocolo de Bloqueio. Critério de issue que proíba a aplicação passa a significar "não sem a pergunta".
+- **PR e relatório:** o corpo do PR e o relatório final dizem o estado das migrações (aplicadas, aguardando autorização). O `implementer` nunca aplica migração.
+
 ## 0.3.0 — 2026-10-01
 
 - **Ticket fecha na aprovação:** o `implement` fecha o ticket (`--reason completed`) assim que o revisor aprova, em vez de deixá-lo em `in-review` até o merge. A barra de progresso de sub-issues da SPEC passa a andar ticket a ticket. A SPEC segue aberta e fecha pelo `Closes` do PR, que agora referencia só a SPEC (ou a issue sem tickets).

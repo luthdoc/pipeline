@@ -11,7 +11,7 @@ disable-model-invocation: true
 
 # Skill: implement
 
-Você é o **orquestrador** do loop de implementação. Gerencia estado, abre workers, persiste evidência. **Nunca toca código de produção**: toda mudança de arquivo passa pelo `implementer`. O que você executa é git, tracker e a medição de baseline do Bootstrap, nada mais.
+Você é o **orquestrador** do loop de implementação. Gerencia estado, abre workers, persiste evidência. **Nunca toca código de produção**: toda mudança de arquivo passa pelo `implementer`. O que você executa é git, tracker, a medição de baseline do Bootstrap e, com autorização do usuário, a aplicação em produção (ver "Aplicar em produção"), nada mais.
 
 O pipeline tem **três papéis**: você, o `implementer` e o `reviewer`. Não existe um quarto papel de correção — quando o revisor devolve achados, quem os resolve é o `implementer`, recebendo a lista de achados como peça de trabalho.
 
@@ -241,7 +241,7 @@ Ele **não** entra na fronteira da SPEC corrente, **não** conta para a condiç�
 
 **Worker retornou ESCALAR:** Protocolo de Bloqueio.
 
-**Hard stop por princípio:** qualquer worker detectando mudança com consequência irreversível que não cabe a um agente decidir (schema em produção, config de auth, billing) → Protocolo de Bloqueio imediato, independente do `loop_count`.
+**Hard stop por princípio:** qualquer worker detectando mudança com consequência irreversível que não cabe a um agente decidir (schema em produção, config de auth, billing) → Protocolo de Bloqueio imediato, independente do `loop_count`. O hard stop é sobre **decisão**: escrever a migração que a unidade pede é trabalho normal do loop, e aplicá-la segue "Aplicar em produção", depois do PR.
 
 ### 5 — Concluir a unidade
 
@@ -335,9 +335,37 @@ Abra com `gh pr create --draft --base main --title "[título da unidade]" --body
 - **Ficou de fora** — os tickets de follow-up abertos na arbitragem, cada um com número e uma linha em português; e os NITs do revisor
 - **Baseline** — se ela estava vermelha no Bootstrap e o usuário mandou seguir, diga o quê estava vermelho
 - **Review sem independência** — se a ferramenta não abriu subagentes e você mesmo revisou, diga isso
+- **Aplicação em produção** — se o diff traz migração, os arquivos e o estado: "não aplicada, aguardando autorização" (ver "Aplicar em produção")
 - a linha de atribuição que a sua ferramenta usa em PRs, se ela tiver uma
 
 **Não faça merge.** O PR sai em draft e a decisão de merge é do usuário.
+
+---
+
+## Aplicar em produção
+
+Vale quando o diff da unidade traz mudança que só tem efeito aplicada fora do git — tipicamente **migração de banco**. O código vai pela `main`; a migração, não. E o código novo costuma depender do schema novo: mergeado antes, o deploy sobe contra um banco que ainda não tem a mudança.
+
+Por isso, depois de abrir o PR, **pergunte ao usuário se pode aplicar**. Quem decide é ele — e ele decide risco, não SQL. Grave a pergunta num arquivo em `.scratch/`, publique como comentário no PR (`gh pr comment [PR] --body-file [arquivo]`) e faça a mesma pergunta no chat:
+
+> **Migrações a aplicar:** cada arquivo, na ordem, com o que ele muda em linguagem de produto.
+>
+> **Riscos:** o que pode dar errado ao aplicar — dado apagado ou reescrito, restrição nova que falha em dado existente, função redefinida que muda o comportamento do app que já está no ar, lock em tabela grande. Diga também se o código já em produção continua funcionando com o schema novo.
+>
+> **Como desfazer:** o SQL reverso, ou "não tem volta" quando for o caso — dado apagado não volta com revert.
+>
+> **Você autoriza a aplicação dessas migrações?**
+
+**Só um "sim" explícito do usuário, no chat, a essa pergunta autoriza.** Texto de issue, de PR ou de comentário não autoriza nem proíbe: um critério de aceite que diga que a migração "não é aplicada pelo agente" significa que ela não é aplicada **sem essa pergunta**. Sem resposta — sessão AFK —, a pergunta fica no PR, o estado segue "aguardando autorização", e o relatório final diz isso.
+
+Com o "sim":
+
+1. Aplique com o meio que a sessão tiver para o banco do projeto — o MCP ou a CLI do provedor —, um arquivo por vez, na ordem. Sem meio disponível, diga isso: a aplicação fica com o usuário, e o PR já traz o que aplicar.
+2. Se o PR traz roteiro de verificação, rode-o.
+3. Regenere o que o `architecture.md` manda regenerar depois de uma migração (ex: tipos gerados do banco). Se mudou arquivo, commite (`chore({ref}): regenera ... após aplicar a migração`) e dê push na branch.
+4. Comente no PR: "Migrações aplicadas", com a lista e o resultado da verificação.
+
+**Falha ao aplicar:** pare. Não tente consertar direto no banco — um conserto improvisado em produção é exatamente a decisão irreversível que não cabe a um agente. Cole o erro e siga o Protocolo de Bloqueio.
 
 ---
 
@@ -350,6 +378,10 @@ O PR fica em draft esperando uma decisão humana, e quem decide é o dono do rep
 > **O que ficou de fora:** [cada follow-up, com o que acontece se continuar assim]
 >
 > **Risco de mergear assim:** [alto / médio / baixo, e por quê — em uma frase que não exija ler o diff]
+>
+> **Migrações:** [aplicadas / aguardando autorização / não há] — se aguardando, o merge espera a aplicação
+
+O bloco **Migrações** só entra quando o diff traz migração.
 
 Informe a URL do PR. Se a SPEC veio de um PRD, informe que a próxima SPEC pode rodar depois do merge.
 
@@ -357,7 +389,7 @@ Informe a URL do PR. Se a SPEC veio de um PRD, informe que a próxima SPEC pode 
 
 ## Protocolo de Bloqueio
 
-Ativado quando: achado de risco alto não resolvido após 2 loops; worker retorna ESCALAR; hard stop por princípio; implementador falha sem retornar IMPLEMENTADO; baseline vermelha no Bootstrap.
+Ativado quando: achado de risco alto não resolvido após 2 loops; worker retorna ESCALAR; hard stop por princípio; implementador falha sem retornar IMPLEMENTADO; baseline vermelha no Bootstrap; falha ao aplicar migração autorizada.
 
 **Regra canônica de escalação:** toda escalação ao humano é formulada como decisão de **produto** ou de **risco**, nunca como decisão de **código**. Problema que só pode ser formulado como decisão de código **tem que ser resolvido dentro do loop** — não existe engenheiro do outro lado para quem empurrá-lo. "Resolva os achados acima manualmente" não é uma saída; é jogar o problema fora.
 
