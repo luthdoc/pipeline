@@ -152,7 +152,7 @@ RESULTADO: LIMPO | ACHADOS ([N] pendentes, [N] novos)
 
 Em vez de ACHADOS, retorne ESCALAR quando:
 
-- a mudança toca domínio com consequência irreversível (schema em produção, auth, billing, migration) e a decisão excede o que se corrige cirurgicamente
+- a mudança toca domínio com consequência irreversível (schema em produção, auth, billing, migration) e a decisão excede o que se corrige cirurgicamente. Uma migração que os ACs pedem não é, por si, motivo de ESCALAR: revise-a como qualquer código — a aplicação em produção tem autorização própria, depois do PR
 - há ambiguidade fundamental nos ACs que impede julgar se o diff está certo
 
 ```

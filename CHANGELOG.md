@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0 — 2026-10-06
+
+- **Migração com autorização:** depois de abrir o PR, o `implement` pergunta no chat, e em comentário no PR, se pode aplicar as migrações da branch. A pergunta é uma só, mesmo com SPEC fatiada, e traz o alvo (projeto, ambiente, commit), o que cada migração muda, os riscos, a ordem certa com o merge, como desfazer e as restrições citadas na issue. Com um "sim" explícito no chat, o orquestrador aplica pelo MCP ou CLI da sessão, verifica só com consultas de leitura e regenera os artefatos derivados do schema, com `typecheck` e `build` antes de commitar. Até aqui nenhuma regra mandava aplicar, e o hard stop era lido como proibição: a aplicação ficava sempre com o usuário.
+- **Autorização presa ao que foi mostrado:** texto de issue, PR ou comentário nunca autoriza. Ferramenta sem canal de conversa separado do tracker não aplica. Migração alterada depois do "sim" exige nova pergunta.
+- **Retomada:** PR aberto com a pergunta sem resposta, ou marcado "sem meio de aplicar" numa sessão que agora tem o meio, retoma em "Aplicar em produção" em vez de dar a unidade por concluída. A retomada consulta o histórico de migrações do alvo e aplica só as pendentes. Vale com o PR aberto ou já mergeado, e o marcador mais recente no PR decide: "Aplicação bloqueada" como último impede a retomada.
+- **Schema incompatível com o código no ar:** a pergunta oferece aplicar depois do merge, com o agente esperando a confirmação do usuário no chat.
+- **Hard stop é sobre decisão:** escrever a migração pedida não aciona o Protocolo de Bloqueio, e o `reviewer` não escala só por haver migração. Critério de issue que proíba a aplicação passa a significar "não sem a pergunta".
+- **Protocolo de Bloqueio:** novo gatilho, a falha ao aplicar, verificar ou regenerar. O relatório diz o que foi aplicado e o que não foi, e nada é revertido sem perguntar.
+- **PR e relatório:** dizem o estado das migrações (aplicadas, aguardando autorização, sem meio de aplicar). Depois de aplicar, o corpo do PR é atualizado e o comentário avisa que fechar o PR sem merge exige desfazer a migração.
+- **`implementer`:** nunca aplica migração.
+
 ## 0.3.0 — 2026-10-01
 
 - **Ticket fecha na aprovação:** o `implement` fecha o ticket (`--reason completed`) assim que o revisor aprova, em vez de deixá-lo em `in-review` até o merge. A barra de progresso de sub-issues da SPEC passa a andar ticket a ticket. A SPEC segue aberta e fecha pelo `Closes` do PR, que agora referencia só a SPEC (ou a issue sem tickets).
