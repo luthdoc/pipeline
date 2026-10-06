@@ -11,7 +11,7 @@ disable-model-invocation: true
 
 # Skill: implement
 
-Você é o **orquestrador** do loop de implementação. Gerencia estado, abre workers, persiste evidência. **Nunca toca código de produção**: toda mudança de arquivo passa pelo `implementer` — a única exceção são os artefatos regenerados depois de aplicar uma migração autorizada. O que você executa é git, tracker, a medição de baseline do Bootstrap e, com autorização do usuário, a aplicação em produção com a regeneração do que ela exige (ver "Aplicar em produção"), nada mais.
+Você é o **orquestrador** do loop de implementação. Gerencia estado, abre workers, persiste evidência. **Nunca toca código de produção**: toda mudança de arquivo passa pelo `implementer` — exceção: os artefatos regenerados depois de aplicar uma migração autorizada. O que você executa é git, tracker, a medição de baseline do Bootstrap e, com autorização do usuário, a aplicação em produção com a regeneração do que ela exige (ver "Aplicar em produção"), nada mais.
 
 O pipeline tem **três papéis**: você, o `implementer` e o `reviewer`. Não existe um quarto papel de correção — quando o revisor devolve achados, quem os resolve é o `implementer`, recebendo a lista de achados como peça de trabalho.
 
@@ -163,7 +163,7 @@ Estado:
 - **Algo aberto em `in-progress`** → retoma essa unidade. **Antes de re-executar o loop, leia os comentários da issue:** se o último é o "Implementado e aprovado" do passo 5 e o commit citado nele é o `HEAD` da branch, a queda foi depois da aprovação — só conclua o passo 5, sem implementar nem revisar de novo. Senão, re-execute o loop dela.
 - **Há unidade na fronteira** → roda o Loop
 - **Todos os tickets fechados** (SPEC com tickets) **ou a issue em `in-review`** (issue sem pai e sem tickets), **e sem PR** → abre o PR
-- **PR aberto** → leia os comentários do PR. Se há a pergunta de "Aplicar em produção" sem um "Migrações aplicadas" depois dela, retome em "Aplicar em produção" e refaça a pergunta no chat. Senão, concluído.
+- **PR aberto** → leia os comentários e o corpo do PR. Retome em "Aplicar em produção" se há a pergunta dele sem um "Migrações aplicadas" nem um "Aplicação bloqueada" depois dela, ou se o corpo diz "sem meio de aplicar" e esta sessão tem o meio. Com "Aplicação bloqueada", pare: é Protocolo de Bloqueio, não retomada. Senão, concluído.
 
 **A fronteira** é o conjunto de tickets abertos cujos bloqueadores estão **todos** fechados. Ticket sem bloqueador está na fronteira desde o início; numa cadeia linear, a fronteira é sempre um ticket, de cima para baixo. **A fonte do bloqueio é a seção `## Blocked by` do corpo de cada ticket, e só ela** — mesmo que o tracker tenha relação de bloqueio nativa. Uma fonte só não diverge, e funciona igual em qualquer tracker. Recalcule a cada ticket concluído.
 
@@ -356,7 +356,7 @@ Vale quando o **diff do PR** (`git diff main...HEAD`) traz mudança que só tem 
 >
 > **Riscos:** o que pode dar errado ao aplicar — dado apagado ou reescrito, restrição nova que falha em dado existente, função redefinida que muda o comportamento do app que já está no ar, lock em tabela grande.
 >
-> **Ordem com o merge:** se o código **já em produção** continua funcionando com o schema novo, aplicar antes do merge é seguro — e é o certo quando o código novo depende do schema. Se não continua, diga isso e recomende a saída (aplicar junto com o merge, ou dividir a migração em uma parte compatível agora e outra depois).
+> **Ordem com o merge:** se o código **já em produção** continua funcionando com o schema novo, aplicar antes do merge é seguro — e é o certo quando o código novo depende do schema. Se não continua, diga isso e ofereça a escolha: aplicar **depois do merge**, quando o usuário confirmar no chat que fez o merge e o deploy subiu, ou dividir a migração em uma parte compatível agora e outra depois (o que volta ao loop como mudança de código).
 >
 > **Como desfazer:** se tem volta e o que se perde ao voltar, ou "não tem volta" — dado apagado não volta com revert.
 >
@@ -372,12 +372,12 @@ O "sim" vale para o alvo e o commit mostrados. Se um arquivo de migração mudar
 
 Com o "sim":
 
-1. Aplique um arquivo por vez, na ordem.
+1. Se o usuário escolheu aplicar depois do merge, espere a confirmação dele no chat de que o merge e o deploy aconteceram. Antes de aplicar, consulte o histórico de migrações do alvo pelo mesmo meio e aplique só as que ainda não estão lá — uma retomada não reaplica o que já entrou. Aplique um arquivo por vez, na ordem.
 2. Verifique só com consultas de leitura — as que confirmam que o schema ficou como a migração descreve. Nada que escreva em produção roda fora do que foi autorizado.
 3. Regenere os artefatos derivados do schema que o projeto documenta — no `architecture.md` ou no arquivo de instruções (ex: tipos gerados do banco). Se mudou arquivo, rode `typecheck` e `build` de `## Commands`; com os dois verdes, commite (`chore({ref}): regenera ... após aplicar a migração`, com `{ref}` = a SPEC ou a issue sem tickets; sem tracker, o slug da branch) e dê push. Vermelho é falha: veja abaixo.
-4. Comente no PR "Migrações aplicadas", com a lista, o resultado da verificação e o dos gates. Atualize a linha "Aplicação em produção" do corpo (`gh pr edit [PR] --body-file [arquivo]`). Avise no comentário que **fechar o PR sem merge exige desfazer a migração** — o banco já está com o schema novo.
+4. Comente no PR "Migrações aplicadas", com a lista, o resultado da verificação e o dos gates. Sem artefato derivado documentado, diga "nenhum artefato derivado documentado; nada regenerado". Atualize a linha "Aplicação em produção" do corpo (`gh pr edit [PR] --body-file [arquivo]`). Avise no comentário que **fechar o PR sem merge exige desfazer a migração** — o banco já está com o schema novo.
 
-**Falha** — ao aplicar, na verificação ou nos gates depois de regenerar: pare. Não tente consertar direto no banco nem reverter sem perguntar — um conserto improvisado em produção é exatamente a decisão irreversível que não cabe a um agente. Siga o Protocolo de Bloqueio dizendo quais migrações foram aplicadas e quais não, e cole o erro. Uma migração corrigida depois disso passa pela pergunta de novo.
+**Falha** — ao aplicar, na verificação ou nos gates depois de regenerar: pare. Não tente consertar direto no banco nem reverter sem perguntar — um conserto improvisado em produção é exatamente a decisão irreversível que não cabe a um agente. Comente no PR "Aplicação bloqueada", com quais migrações foram aplicadas e quais não, e o erro colado — é esse comentário que impede a retomada de passar por cima do bloqueio. Depois siga o Protocolo de Bloqueio. Uma migração corrigida depois disso passa pela pergunta de novo.
 
 ---
 
