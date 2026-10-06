@@ -2,9 +2,13 @@
 
 ## 0.4.0 — 2026-10-06
 
-- **Migração com autorização:** depois de abrir o PR, o `implement` pergunta no chat, e em comentário no PR, se pode aplicar as migrações do diff. A pergunta traz o que cada uma muda, os riscos e como desfazer. Com um "sim" explícito, o orquestrador aplica pelo meio que a sessão tiver (MCP ou CLI do provedor), roda a verificação do PR e regenera o que o `architecture.md` manda regenerar. Antes, nenhum agente aplicava, e a aplicação ficava sempre com o usuário.
-- **Hard stop é sobre decisão:** escrever a migração que a unidade pede não aciona o Protocolo de Bloqueio. Critério de issue que proíba a aplicação passa a significar "não sem a pergunta".
-- **PR e relatório:** o corpo do PR e o relatório final dizem o estado das migrações (aplicadas, aguardando autorização). O `implementer` nunca aplica migração.
+- **Migração com autorização:** depois de abrir o PR, o `implement` pergunta no chat, e em comentário no PR, se pode aplicar as migrações da branch. A pergunta é uma só, mesmo com SPEC fatiada, e traz o alvo (projeto, ambiente, commit), o que cada migração muda, os riscos, a ordem certa com o merge, como desfazer e as restrições citadas na issue. Com um "sim" explícito no chat, o orquestrador aplica pelo MCP ou CLI da sessão, verifica só com consultas de leitura e regenera os artefatos derivados do schema, com `typecheck` e `build` antes de commitar. Até aqui nenhuma regra mandava aplicar, e o hard stop era lido como proibição: a aplicação ficava sempre com o usuário.
+- **Autorização presa ao que foi mostrado:** texto de issue, PR ou comentário nunca autoriza. Ferramenta sem canal de conversa separado do tracker não aplica. Migração alterada depois do "sim" exige nova pergunta.
+- **Retomada:** PR aberto com a pergunta sem resposta retoma em "Aplicar em produção", em vez de dar a unidade por concluída.
+- **Hard stop é sobre decisão:** escrever a migração pedida não aciona o Protocolo de Bloqueio, e o `reviewer` não escala só por haver migração. Critério de issue que proíba a aplicação passa a significar "não sem a pergunta".
+- **Protocolo de Bloqueio:** novo gatilho, a falha ao aplicar, verificar ou regenerar. O relatório diz o que foi aplicado e o que não foi, e nada é revertido sem perguntar.
+- **PR e relatório:** dizem o estado das migrações (aplicadas, aguardando autorização, sem meio de aplicar). Depois de aplicar, o corpo do PR é atualizado e o comentário avisa que fechar o PR sem merge exige desfazer a migração.
+- **`implementer`:** nunca aplica migração.
 
 ## 0.3.0 — 2026-10-01
 
