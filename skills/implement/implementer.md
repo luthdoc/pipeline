@@ -41,6 +41,8 @@ Os comandos do projeto estão na seção `## Commands` do **arquivo de instruç�
 
    **Não** rode `build` aqui — ele é o único caro, e roda uma vez só no passo 6.
 
+   **Seção sem nenhum label** — repo sem manifesto ainda: a peça é a que cria o manifesto. Ordene primeiro a task que instala o runner de teste e os scripts de lint, typecheck, test e build da stack — o runner vem antes do RED dessa task, porque sem ele não há como ver o teste falhar. Daí em diante o gate roda os scripts que ela criou, e a seção é preenchida no passo 5.
+
    Se a seção não existir, **pare imediatamente**:
 
    > ⛔ Seção `## Commands` não encontrada no arquivo de instruções (`AGENTS.md` ou `CLAUDE.md`).
@@ -50,7 +52,9 @@ Os comandos do projeto estão na seção `## Commands` do **arquivo de instruç�
 
    **Gate vermelho que o seu diff não pode ter causado** — o arquivo apontado não foi tocado por você, o erro é sobre artefato de build, ou a baseline do brief já mostrava aquele gate vermelho: **rode o label `clean` de `## Commands`, se o projeto declarar, e repita o gate uma vez.** Ficou verde, siga normalmente. Continuou vermelho, ou o projeto não declara `clean` → pare e retorne `ESCALAR` com a saída do comando colada literal. Não tente consertar código que você não escreveu para calar um gate.
 
-5. **`architecture.md`** — se a unidade criou módulo ou camada nova, moveu um seam de teste, mudou uma fronteira que o documento lista (ex: servidor/cliente) ou mudou um invariante, atualize `docs/agents/architecture.md` **no mesmo commit**. É a única exceção à regra "nunca escreva o que nenhum AC pede", e ela é explícita: aquela regra fala de **código de produção**. O mapa do repo é infraestrutura do próprio processo — quatro etapas do pipeline o leem — `to-spec`, `to-tickets`, você e o revisor — para não precisarem redescobrir o repo, e ele apodrece se ninguém tiver a obrigação de mexer. Uma linha na tabela costuma bastar; não reescreva o documento. Se o arquivo não existir (repo configurado antes de o `setup-project` gerá-lo), crie-o com o título `# Arquitetura` e as seções `## Onde cada coisa mora` (tabela `| Área | Módulo | Nota |`), `## Seams de teste` e `## Invariantes`, preenchendo o que esta unidade tocou.
+5. **`architecture.md` e `## Commands`** — se a unidade criou módulo ou camada nova, moveu um seam de teste, mudou uma fronteira que o documento lista (ex: servidor/cliente) ou mudou um invariante, atualize `docs/agents/architecture.md` **no mesmo commit**. É a única exceção à regra "nunca escreva o que nenhum AC pede", e ela é explícita: aquela regra fala de **código de produção**. O mapa do repo é infraestrutura do próprio processo — quatro etapas do pipeline o leem — `to-spec`, `to-tickets`, você e o revisor — para não precisarem redescobrir o repo, e ele apodrece se ninguém tiver a obrigação de mexer. Uma linha na tabela costuma bastar; não reescreva o documento. Se o arquivo não existir (repo configurado antes de o `setup-project` gerá-lo), crie-o com o título `# Arquitetura` e as seções `## Onde cada coisa mora` (tabela `| Área | Módulo | Nota |`), `## Seams de teste` e `## Invariantes`, preenchendo o que esta unidade tocou.
+
+   Pela mesma razão, e com a mesma exceção explícita, **`## Commands`** no arquivo de instruções: se a unidade criou o manifesto, ou criou, renomeou ou removeu um script que um label usa, atualize a seção **no mesmo commit**, no formato `- <label>: <comando>`, e apague a linha "Nenhum label ainda", se houver. Declare só script que existe no manifesto e que você rodou nesta peça. Entre candidatos, o gate é o que roda a suite inteira uma vez e termina — nunca modo watch nem e2e. **A peça que cria o manifesto termina com o label `test` declarado**: sem ele, a próxima peça não tem onde rodar o RED. `clean` não é seu: fica para o `/setup-project`, e a falta dele não quebra nada.
 
 6. **Build único, ao final** — depois que todas as tasks passaram pelo ciclo acima, rode o label `build` de `## Commands` **uma única vez** para a peça inteira. Se falhar, corrija e rode de novo até passar. Nunca pule este passo, mesmo com lint/typecheck/test verdes em toda task — o build cobra erros que o typecheck por arquivo não vê: import circular, path alias quebrado, erros de fronteira que só aparecem quando o bundler monta o todo.
 
@@ -68,7 +72,7 @@ Os comandos do projeto estão na seção `## Commands` do **arquivo de instruç�
 - **Nunca rode o `build` mais de uma vez por peça de trabalho.** `lint`, `typecheck` e `test` rodam a cada task; `build` roda uma vez só, no passo 6.
 - **Durante o ciclo RED/GREEN, rode só o arquivo de teste da task.** A suite inteira entra no gate, quando a task fecha — não a cada assert.
 - **Nunca refatore código que a task não tocou.** Refactoring fora do escopo exige peça de trabalho própria.
-- **Nunca escreva o que nenhum AC pede.** Código sem AC correspondente é invenção — remova. Nada de "já que estou aqui". (A atualização do `architecture.md` no passo 5 é a única exceção, e ela não é código de produção.)
+- **Nunca escreva o que nenhum AC pede.** Código sem AC correspondente é invenção — remova. Nada de "já que estou aqui". (A atualização do `architecture.md` e de `## Commands` no passo 5 é a única exceção, e ela não é código de produção.)
 - **Não dê push.** Não faça self-review.
 - **Nunca aplique migração.** Escreva-a no repo; quem a aplica, com autorização do usuário, é o orquestrador, depois do PR.
 

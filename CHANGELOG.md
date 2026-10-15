@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 — 2026-10-15
+
+- **`## Commands` nasce com o código:** num repo sem manifesto, o `setup-project` grava a seção sem labels, e o `implementer` a preenche no mesmo commit em que cria o manifesto, como já fazia com o `architecture.md`. Depois disso, mantém a seção sempre que cria, renomeia ou remove um script de gate. A unidade que cria o manifesto termina com o label `test` declarado. Até aqui, o primeiro projeto de um repo vazio ficava num ciclo: o `implement` precisava dos comandos, os comandos precisavam do manifesto e o manifesto precisava do `implement`. A saída era fazer o scaffold à mão, fora do loop, sem TDD nem revisor.
+- **`implement`, baseline:** seção sem labels e sem manifesto no repo conta como baseline verde ("sem gates — repo sem manifesto"). Seção sem labels com manifesto no repo encerra pedindo `/setup-project`. Antes, esse caso passava pelo pré-requisito e a unidade seguia sem gate nenhum.
+- **CL6:** cobra também `## Commands`. Manifesto criado, ou script de gate alterado, sem a seção atualizada no mesmo diff é achado; manifesto novo sem `test` também.
+
 ## 0.4.0 — 2026-10-06
 
 - **Migração com autorização:** depois de abrir o PR, o `implement` pergunta no chat, e em comentário no PR, se pode aplicar as migrações da branch. A pergunta é uma só, mesmo com SPEC fatiada, e traz o alvo (projeto, ambiente, commit), o que cada migração muda, os riscos, a ordem certa com o merge, como desfazer e as restrições citadas na issue. Com um "sim" explícito no chat, o orquestrador aplica pelo MCP ou CLI da sessão, verifica só com consultas de leitura e regenera os artefatos derivados do schema, com `typecheck` e `build` antes de commitar. Até aqui nenhuma regra mandava aplicar, e o hard stop era lido como proibição: a aplicação ficava sempre com o usuário.
