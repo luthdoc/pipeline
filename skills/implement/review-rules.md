@@ -258,17 +258,17 @@ function formatUserDisplayName(user: User) { ... }
 
 ---
 
-## CL6 — Mudança estrutural acompanhada no `architecture.md`
+## CL6 — Mudança estrutural acompanhada no `architecture.md` e em `## Commands`
 
-**Regra:** se o diff criou módulo novo, criou camada nova, moveu um seam de teste, mudou uma fronteira que o documento lista (ex: servidor/cliente) ou mudou um invariante declarado, `docs/agents/architecture.md` tem que aparecer no mesmo diff.
+**Regra:** se o diff criou módulo novo, criou camada nova, moveu um seam de teste, mudou uma fronteira que o documento lista (ex: servidor/cliente) ou mudou um invariante declarado, `docs/agents/architecture.md` tem que aparecer no mesmo diff. Se o diff criou o manifesto do projeto, ou criou, renomeou ou removeu um script que um label de `## Commands` usa, a seção `## Commands` do arquivo de instruções tem que mudar no mesmo diff — e, quando o diff cria o manifesto, sair com o label `test`.
 
-**Por quê:** o `architecture.md` é lido por `to-spec`, `to-tickets`, `implementer` e pelo próprio revisor — é o que evita quatro etapas relerem o repo inteiro. Documento vivo sem fiscal apodrece sozinho: o dono é o `implementer`, e quem cobra é você. Sem isso, a posse existe no papel e ninguém a exerce.
+**Por quê:** o `architecture.md` é lido por `to-spec`, `to-tickets`, `implementer` e pelo próprio revisor — é o que evita quatro etapas relerem o repo inteiro. `## Commands` é de onde o `implement` e o `implementer` tiram os gates: desatualizada, ela manda rodar comando que não existe; vazia num repo com código, a próxima unidade passa sem gate nenhum. Documento vivo sem fiscal apodrece sozinho: o dono é o `implementer`, e quem cobra é você. Sem isso, a posse existe no papel e ninguém a exerce.
 
-**Como checar** — por leitura do diff, sem executar nada: liste os arquivos criados em diretório de módulo ou em diretório novo, e os que cruzaram uma fronteira listada no `architecture.md`. Para cada um, procure `docs/agents/architecture.md` na lista de arquivos do diff. Ausente = achado.
+**Como checar** — por leitura do diff, sem executar nada: liste os arquivos criados em diretório de módulo ou em diretório novo, e os que cruzaram uma fronteira listada no `architecture.md`. Para cada um, procure `docs/agents/architecture.md` na lista de arquivos do diff. Ausente = achado. Depois, procure manifesto (`package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`) entre os arquivos do diff: criado, ou com script de gate alterado, exige `AGENTS.md` (ou `CLAUDE.md`) no diff com a mudança em `## Commands`, cada label apontando para um script que existe no manifesto. Ausente, label sem script, ou manifesto novo sem `test` = achado.
 
-**Severidade: WARN.** O conserto é cirúrgico — uma linha na tabela "Onde cada coisa mora" — e não trava o loop.
+**Severidade: WARN.** O conserto é cirúrgico — uma linha na tabela "Onde cada coisa mora", ou em `## Commands` — e não trava o loop.
 
-**Não é achado:** arquivo novo que é só mais uma instância de um padrão já documentado (uma rota, uma página); teste novo num seam que já existe; edição de arquivo existente que não muda camada, seam nem invariante; a simples ausência de `docs/agents/architecture.md` no repo quando o diff não faz mudança estrutural — o `setup-project` o gera, e o `implementer` o cria na primeira mudança estrutural.
+**Não é achado:** arquivo novo que é só mais uma instância de um padrão já documentado (uma rota, uma página); teste novo num seam que já existe; edição de arquivo existente que não muda camada, seam nem invariante; a simples ausência de `docs/agents/architecture.md` no repo quando o diff não faz mudança estrutural — o `setup-project` o gera, e o `implementer` o cria na primeira mudança estrutural; mudança no manifesto que não toca script de gate (dependência, versão, metadado); `clean` ausente.
 
 ---
 

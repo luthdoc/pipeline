@@ -128,6 +128,8 @@ Depois do checkout e **antes de abrir qualquer worker**:
 
 2. Rode os labels `lint`, `typecheck` e `test` **uma vez** e guarde o resultado. É a **foto do "antes"**: o estado do projeto antes de qualquer alteração.
 
+   **Seção sem nenhum label:** procure um manifesto no repo (`package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`). Não há → é o repo novo, antes da primeira unidade: a foto é "sem gates — repo sem manifesto", e ela conta como verde. Quem declara os comandos é o `implementer` da unidade que cria o manifesto (passo 5 do arquivo dele). Há → a seção está desatualizada, e seguir faria a unidade passar sem gate nenhum: ENCERRA pedindo `/setup-project`.
+
 3. **Baseline verde** → siga. A foto entra no brief do `implementer` (passo 1 do Loop).
 
 4. **Baseline vermelha** → **pare e pergunte, uma vez**, em linguagem de risco, com recomendação:

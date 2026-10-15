@@ -49,7 +49,7 @@ Cada worker roda num subagente novo, com contexto limpo. Em ferramenta sem subag
 
 O pipeline é genérico. O que é de cada projeto mora no repo do projeto, gerado pelo `setup-project`:
 
-- **Arquivo de instruções** (`AGENTS.md`, ou `CLAUDE.md` na falta dele) — seções `## Issue Tracker`, `## Commands` e `## Fluxo`.
+- **Arquivo de instruções** (`AGENTS.md`, ou `CLAUDE.md` na falta dele) — seções `## Issue Tracker`, `## Commands` e `## Fluxo`. Em repo sem manifesto, `## Commands` nasce sem labels e é preenchida pelo `implementer` na unidade que cria o manifesto; depois, ele a mantém quando muda um script de gate.
 - `docs/agents/issue-tracker.md` — comandos do tracker e vocabulário de labels.
 - `docs/agents/architecture.md` — mapa de módulos, seams e invariantes, lido pelos agentes. Gerado pelo `setup-project`, mantido pelo `implementer`.
 - `CLAUDE.md` com `@AGENTS.md` — só quando a ferramenta não lê `AGENTS.md` sozinha (ex: Claude Code). Criado pelo `setup-project`.

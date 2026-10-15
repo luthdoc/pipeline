@@ -290,6 +290,8 @@ Leia o manifesto do projeto e extraia os comandos reais:
 
 Ambiguidade também é sua de resolver, não do usuário. Repo com `test`, `test:watch` e `test:e2e` tem três candidatos e só um é o gate: escolha o que roda a suite inteira uma vez e termina — nunca o modo watch, que não termina, nem o e2e, lento demais para gate por task — e informe a escolha em uma linha.
 
+**Repo sem manifesto ainda** — o caso do repo novo, antes da primeira SPEC: não há de onde derivar. Grave a seção só com o título e a linha `Nenhum label ainda: o implementer declara os comandos na unidade que criar o manifesto.`, pule os passos 1b a 4 e informe isso na saída. Não escreva comando a partir da tabela Stack do PRD — é plano, e a seção nunca documenta comando que ainda não existe. É o mesmo tratamento do `architecture.md` num repo sem código (Parte 5): o `implementer` preenche a seção no mesmo commit em que o manifesto nasce, e a mantém quando muda um script de gate depois; o revisor cobra (CL6).
+
 ### 1b. O quinto label: `clean`
 
 `clean` é **opcional** e apaga **artefatos de build**, nunca código-fonte. Ele existe porque o problema que resolve é genérico e a solução é específica de cada stack: um artefato deixado por um build de outra branch faz um gate ficar vermelho sem nenhum arquivo-fonte estar errado, e o agente atribui o vermelho a si mesmo. Declarando `clean`, o pipeline resolve o caso mecânico sem que nenhuma skill precise saber que Next.js existe.
@@ -381,7 +383,7 @@ Confirme o critério com o usuário antes de gravar: o limiar entre "implementa 
 
 ## Parte 5 — `docs/agents/architecture.md`
 
-O mapa do código para os agentes: `to-spec`, `to-tickets`, `implementer` e revisor o leem para não redescobrir o repo a cada execução. Não é documento para o dono ler; quem o mantém é o `implementer`, e quem cobra é o revisor (CL6).
+O mapa do código para os agentes: `to-spec`, `to-tickets`, `implementer` e revisor o leem para não redescobrir o repo a cada execução. Não é documento para o dono ler; quem o mantém é o `implementer`, e quem cobra é o revisor (CL6) — a mesma posse que ele tem sobre `## Commands`.
 
 Se ele já existe, não reescreva. Senão, explore o código e grave, curto:
 
@@ -421,7 +423,7 @@ Ao finalizar, informe:
 > ✅ Projeto configurado.
 >
 > **Tracker:** [tracker] — labels criadas: [lista]. Detalhe em `docs/agents/issue-tracker.md`.
-> **Commands:** lint [Ns] · typecheck [Ns] · test [Ns] · build [Ns] · clean [Ns | não declarado]
+> **Commands:** [lint [Ns] · typecheck [Ns] · test [Ns] · build [Ns] · clean [Ns | não declarado] | sem labels — repo sem manifesto; a unidade que criar o manifesto os declara]
 > **Fluxo:** gravado no arquivo de instruções.
 > **Remote:** [URL].
 > **Arquitetura:** `docs/agents/architecture.md` [gerado | esqueleto — repo sem código | já existia].
