@@ -3,10 +3,11 @@ name: setup-project
 description: >
   Configura um repositório para o pipeline: issue tracker e vocabulário de labels,
   a seção `## Commands` (lint/typecheck/test/build/clean) que o implementer lê como
-  gate, a seção `## Fluxo` com as saídas recomendadas depois de um grill, e o remote.
-  Rode uma vez por repositório, antes do primeiro uso de to-spec, to-tickets ou
-  implement. Use quando o usuário disser "setup do projeto", "setup-project",
-  "configura o tracker", "prepara o repo para o pipeline" ou variações.
+  gate, a seção `## Fluxo` com as saídas recomendadas depois de um grill, o remote,
+  o template de PR, a CI com esses gates e `npm audit`, os rótulos de risco e o
+  `review-rules-projeto.md`. Rode uma vez por repositório, antes do primeiro uso de
+  to-spec, to-tickets ou implement. Use quando o usuário disser "setup do projeto",
+  "setup-project", "configura o tracker", "prepara o repo para o pipeline" ou variações.
 disable-model-invocation: true
 ---
 
@@ -14,12 +15,14 @@ disable-model-invocation: true
 
 Você configura, uma vez por repositório, os contratos que o resto do pipeline lê em runtime. Sem eles as outras skills param com erro — de propósito, para falhar alto em vez de adivinhar.
 
-O output são três arquivos, mais um opcional:
+O output são os arquivos abaixo. Os três primeiros são o contrato que o resto do pipeline lê; o restante é o que faz o PR chegar decidível sem abrir o diff.
 
 - **arquivo de instruções** — três seções curtas: `## Issue Tracker`, `## Commands`, `## Fluxo`
 - **`docs/agents/issue-tracker.md`** — o detalhe pesado (comandos do tracker, tabela de labels)
 - **`docs/agents/architecture.md`** — o mapa do código que `to-spec`, `to-tickets`, `implementer` e revisor leem (Parte 5)
-- **`docs/agents/review-rules-projeto.md`** *(opcional)* — critérios de review específicos do projeto (Parte 6)
+- **`docs/agents/review-rules-projeto.md`** — critérios deste projeto e os caminhos extras de risco (Parte 6). Sempre criado.
+- **`.github/pull_request_template.md`** — as seções Como foi testado, Risco e Como desfazer (Parte 7)
+- **`.github/workflows/ci.yml`** — os gates de `## Commands` e, em projeto Node, `npm audit` (Parte 7)
 
 **Qual é o arquivo de instruções:** `AGENTS.md` na raiz — o formato que a maioria das ferramentas de agente lê. Se o repo já tem `CLAUDE.md` e não tem `AGENTS.md`, use o `CLAUDE.md` existente em vez de criar um segundo arquivo.
 
@@ -27,7 +30,7 @@ O output são três arquivos, mais um opcional:
 
 O arquivo de instruções entra no contexto de toda conversa — mantê-lo enxuto importa. O detalhe fica isolado num arquivo que só quem precisa vai ler.
 
-Seis partes, nesta ordem — a última opcional.
+Sete partes, nesta ordem.
 
 **O que você pergunta, e o que não.** O dono do repositório pode não ler código. Pergunte só decisões de processo: qual tracker, qual vocabulário de labels, qual o limiar do `## Fluxo`. O que é técnico — comandos do tracker, script `clean`, mapa do código, critérios de review — você decide, grava e informa em uma linha, sem pedir aprovação de rascunho.
 
@@ -340,7 +343,7 @@ Cinco labels, uma seção. **Não crie seções separadas para "CI" e "testes"**
 
 Se algum label não existir neste stack (projeto sem typecheck, por exemplo), omita a linha. Os agentes rodam os labels que existem, e o `clean` ausente só significa que o passo de limpeza é pulado — nada quebra.
 
-> **`audit` não é um label desta seção.** Auditoria de dependência vive na CI, num checkout limpo. O motivo não é a ferramenta: vulnerabilidade não aparece porque alguém mexeu no manifesto, aparece porque publicaram um aviso sobre um pacote que já estava lá — e um gate que só roda quando o diff toca o manifesto nunca pega o caso comum.
+> **`audit` não é um label desta seção.** Auditoria de dependência vive na CI, num checkout limpo. O motivo não é a ferramenta: vulnerabilidade não aparece porque alguém mexeu no manifesto, aparece porque publicaram um aviso sobre um pacote que já estava lá — e um gate que só roda quando o diff toca o manifesto nunca pega o caso comum. Quem grava `.github/workflows/ci.yml` é a Parte 7. Esta seção continua sem label `audit`, e sem uma segunda seção chamada "CI".
 
 ### 4. Reportar o custo ao usuário
 
@@ -408,11 +411,165 @@ Mapa de módulos, seams de teste e invariantes deste repo. Documento vivo: o `im
 
 Escreva só o que o código mostra hoje — não o que o PRD promete. Repo sem código ainda → grave só o esqueleto; o `implementer` preenche conforme os módulos nascem. Aponte para ele no arquivo de instruções, com uma linha fora das três seções do pipeline — ex: `Mapa do código (módulos, seams, invariantes): docs/agents/architecture.md`. Se já houver um ponteiro, não duplique. Informe em uma linha que o gravou.
 
-## Parte 6 — Critérios de review do projeto (opcional)
+## Parte 6 — `docs/agents/review-rules-projeto.md`
 
-O revisor aplica critérios universais — segurança, testes, limpeza, complexidade, code smells — que valem para qualquer stack. Critério que só faz sentido **neste** projeto (regras do framework, tokens do design system, convenções da casa) mora em `docs/agents/review-rules-projeto.md`, no formato dos universais: código, regra, por quê, como checar **por leitura**, severidade. O revisor o lê quando ele existe.
+O revisor aplica critérios universais — segurança, testes, limpeza, complexidade, code smells — que valem para qualquer stack. O que é **deste** projeto mora em `docs/agents/review-rules-projeto.md`: critério de framework ou de design system, caminho extra na classificação de risco do PR, e achado do revisor que se repetiu. O `implement` e o revisor leem esse arquivo. Ele deixa de ser opcional: todo projeto configurado por esta skill o tem.
 
-Não crie o arquivo por padrão, e não pergunte ao usuário — "a stack tem armadilhas?" é pergunta de código. Decida você: se a stack tem armadilhas conhecidas que nenhum lint pega (ex: fronteira servidor/cliente num framework de SSR), grave poucos critérios concretos e informe; se não, pule. Um critério que exige executar algo não entra: vira label de `## Commands` ou passo da CI.
+**Arquivo ausente:** grave o esqueleto abaixo. **Arquivo presente:** não reescreva critério que já está lá. Se faltar a seção `## Risco`, acrescente só ela no fim e avise. Se `## Risco` já existir, não mexa — o projeto pode ter estendido a lista.
+
+Não pergunte "a stack tem armadilhas?". Decida você. Se houver armadilha que nenhum lint pega (ex.: fronteira servidor/cliente num framework de SSR), grave poucos critérios concretos abaixo do esqueleto, no formato dos universais: código, regra, por quê, como checar **por leitura**, severidade. Se não houver, o esqueleto basta, e você informa que não acrescentou critério de stack. Critério que exige executar algo não entra: vira label de `## Commands` ou passo da CI.
+
+```markdown
+# Critérios de review do projeto
+
+Critérios que só fazem sentido neste repositório. O revisor lê este arquivo junto com os universais da skill `implement`. Cada critério: código, regra, por quê, como checar por leitura, severidade.
+
+Bug que chega na `main` e achado que se repete em dois PRs entram aqui quando a correção for uma regra de review. O passo está no README do pipeline, seção "Quando um bug chega na main".
+
+## Risco
+
+A lista padrão do pipeline (skill `implement`, seção "Risco do PR") continua valendo e não se copia para cá. Os bullets abaixo só acrescentam caminhos. Nenhum bullet rebaixa um caminho que a lista padrão já marca como alto.
+
+### Alto
+
+Nenhum caminho extra.
+
+### Baixo
+
+Nenhum caminho extra.
+```
+
+Um bullet de extensão é um prefixo de caminho (`services/payments/`) ou um nome de arquivo (`billing.ts`). "Nenhum caminho extra." significa que a lista padrão basta; quando o projeto for estender, essa linha sai e entram os bullets.
+
+---
+
+## Parte 7 — CI, template de PR e rótulos de risco
+
+O PR que o `implement` abre tem que chegar com três respostas que o dono lê sem o diff: como foi testado, qual é o risco, como desfazer. O template fixa as seções. A CI roda os gates num checkout limpo, fora da máquina de quem implementou. Os rótulos `risk:*` são o que a lista de PRs mostra.
+
+Nada disso é vocabulário de triagem. `risk:alto`, `risk:medio` e `risk:baixo` não entram na tabela de estados da Parte 1, não são exclusivos com `in-progress` e não vão no campo `**Status:**` do markdown local. São rótulo de PR.
+
+### 1. Não sobrescrever o que já existe
+
+Antes de gravar, veja se o arquivo está no repo:
+
+- `.github/pull_request_template.md`
+- `.github/PULL_REQUEST_TEMPLATE.md` ou `docs/pull_request_template.md` — o GitHub aceita os três. Se qualquer um existir, o projeto já escolheu o template: não crie um segundo.
+- `.github/workflows/ci.yml`
+
+**Arquivo que já existe não é reescrito.** Avise o caminho e, em uma linha, o que falta em relação ao que esta parte gravaria (as seções do template; no workflow, o job `gates` com os labels de `## Commands` e, em Node, o job `audit`). Quem reconcilia é o dono. Setup que sobrescreve CI alheia troca workflow revisado por arquivo gerado. Arquivo ausente, crie. Diretório `.github/workflows/` ausente, crie também.
+
+### 2. Template de PR
+
+Grave `.github/pull_request_template.md` com estas seções, nesta ordem. O `implement` preenche as mesmas ao abrir o PR. O template é o que aparece para quem abre PR à mão.
+
+```markdown
+## O que entrou
+
+<!-- Em linguagem de produto: o que passou a funcionar. -->
+
+## Como foi testado
+
+<!-- Gates de ## Commands, colados label por label. O que não rodou fica "não reportado". -->
+
+## Risco
+
+<!-- `risk:alto`, `risk:medio` ou `risk:baixo`, e o motivo pelos caminhos do diff. -->
+
+## Como desfazer
+
+<!-- Antes do merge: fechar o PR. Depois: revert do merge e rollback do deploy. Migração de banco não volta com revert do git. -->
+
+## Achados do revisor
+
+<!-- Cada achado com a resposta: corrigido, ou recusado com motivo. Apague a seção se não houver. -->
+
+## Ficou de fora
+
+<!-- Follow-ups, e o que a baseline já tinha de vermelho. Apague a seção se não houver. -->
+```
+
+### 3. Workflow de CI
+
+Grave `.github/workflows/ci.yml`. Dispara em todo `pull_request`. Não dispare em `push` só porque é comum: o contrato é o PR.
+
+**Job `gates`.** Um passo por label de `## Commands`, exceto `clean`. `clean` apaga artefato local; o checkout da CI já é limpo. Copie o comando da seção literalmente — `npm test` quando a seção diz `npm run test:ci` é outro gate. Cada gate é um `run:` próprio. Sem `||` e sem `continue-on-error`: gate vermelho falha o job.
+
+Antes dos gates, o setup da stack:
+
+| Stack | Antes dos gates |
+|---|---|
+| Node (`package.json`) | `actions/checkout@v7`, `actions/setup-node@v7`. Versão de Node: `.nvmrc`, `.node-version` ou `engines.node`; se nenhuma existir, `22`. Cache `npm`. `npm ci` se existir `package-lock.json`; senão `npm install`. |
+| Rust (`Cargo.toml`) | `actions/checkout@v7`, `dtolnay/rust-toolchain@stable` |
+| Go (`go.mod`) | `actions/checkout@v7`, `actions/setup-go@v7` |
+| Python (`pyproject.toml`) | `actions/checkout@v7`, `actions/setup-python@v7`, e o install que os comandos da seção exigem |
+
+Pine a **major** (`@v7`), nunca `@main`. Major nova dessas actions, quando sair, substitui a da tabela; não trave o workflow num patch.
+
+Envolva só os passos dos gates com os marcadores. O `implementer` atualiza esse bloco quando `## Commands` muda, e não reescreve o resto do arquivo:
+
+```yaml
+name: ci
+
+on:
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # pipeline:commands
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      # pipeline:commands-fim
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high
+```
+
+O exemplo é Node com lockfile e os quatro labels. Gere o yaml da stack real. Label ausente em `## Commands` não vira passo.
+
+**Job `audit`, só em projeto Node** (existe `package.json`). Outra stack não ganha audit inventado — nem `cargo audit`, nem `pip-audit` — se o repo não usa essa ferramenta. O comando é `npm audit --audit-level=high`: falha em `high` e `critical`. `moderate` e `low` não falham o job. Aviso transitivo sem correção publicada deixaria todo PR vermelho, e ninguém age. É o mesmo nível que `review-rules.md` já cita. Com `package-lock.json`, instale com `npm ci`; sem lock, `npm install`, e avise que o resultado do audit não reproduz entre máquinas.
+
+**Repo sem manifesto** (`## Commands` sem labels): grave o workflow mesmo assim. Job `gates` com checkout e, dentro dos marcadores, só o comentário de que o `implementer` preenche os passos na unidade que criar o manifesto. Sem `package.json`, sem job `audit`. O arquivo nasce aqui; o comando de gate nasce com o código — o mesmo trato do `architecture.md` num repo sem código.
+
+Não coloque chave de API neste arquivo. Não coloque review de IA nem review de segurança de serviço pago. Gates declarados e, no Node, `npm audit`.
+
+Não rode esta CI daqui. A Parte 2 já mediu os comandos; este workflow roda no GitHub, no PR.
+
+### 4. Rótulos de risco
+
+Com remote GitHub e `gh` autenticado, crie os três. `--force` é o que torna o comando idempotente: rótulo novo é criado, rótulo existente tem cor e descrição alinhadas a esta lista.
+
+```bash
+gh label create "risk:alto" --color "B60205" --description "PR toca migracao, auth, cobranca, CI ou deploy" --force
+gh label create "risk:medio" --color "FBCA04" --description "PR fora das listas de alto e de baixo" --force
+gh label create "risk:baixo" --color "0E8A16" --description "PR so de documentacao, texto ou estilo" --force
+```
+
+A descrição vai sem acento porque o que o dono lê no PR é a linha de `## Risco`, não esta string. O nome do rótulo é o contrato: `risk:alto`, `risk:medio`, `risk:baixo`.
+
+Sem `gh`, ou sem remote GitHub, não invente rótulo. Avise que a linha de risco no corpo do PR continua valendo e o rótulo espera um GitHub. Markdown local não tem rótulo de PR.
+
+### 5. O que não entra no arquivo de instruções
+
+CI, template e rótulo de risco não ganham seção em `AGENTS.md`. Workflow é arquivo, não decisão de processo, e o arquivo de instruções não guarda o que a Parte 2 já separou de propósito. Uma seção "CI" ao lado de `## Commands` continua proibida.
 
 ---
 
@@ -428,7 +585,10 @@ Ao finalizar, informe:
 > **Remote:** [URL].
 > **Arquitetura:** `docs/agents/architecture.md` [gerado | esqueleto — repo sem código | já existia].
 > **Ponteiro:** [`CLAUDE.md` → `@AGENTS.md` criado | não necessário].
-> **Critérios do projeto:** [`docs/agents/review-rules-projeto.md` com N critérios | não criado].
+> **Critérios do projeto:** `docs/agents/review-rules-projeto.md` [criado | já existia; `## Risco` acrescentada | já existia com `## Risco`, não mexi]. Critérios de stack acrescentados: [N | nenhum].
+> **Template de PR:** [`.github/pull_request_template.md` criado | já existia em [caminho], não mexi. Falta: [seções, ou "nada"]].
+> **CI:** [`.github/workflows/ci.yml` criado — gates: [labels] · audit: [sim, `--audit-level=high` | não — repo sem `package.json`] | já existia, não mexi. Falta: [o que diverge, ou "nada"]].
+> **Rótulos de risco:** [`risk:alto`, `risk:medio`, `risk:baixo` | não criados — sem GitHub].
 >
 > Próximo passo: `/to-spec` para registrar uma unidade de trabalho, ou `/implement`
 > direto se a mudança for pequena. Loop AFK: [disponível via `/implement` | indisponível neste modo].

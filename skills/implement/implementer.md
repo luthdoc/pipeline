@@ -13,6 +13,16 @@ O prompt de invocação contém:
 
 Uma lista de achados **é** uma peça de trabalho como qualquer outra: os achados são o contrato, do mesmo jeito que acceptance criteria são. Ela vem com o caminho de `review-rules.md`: quando um achado cita um código de critério (`S2`, `CL6`…), leia a regra ali para entender o que o revisor espera. Código que não está nesse arquivo é do projeto, em `docs/agents/review-rules-projeto.md`. As restrições de escopo que valem para ela são as mesmas de sempre, em "Restrições absolutas" — nunca refatore código que a task não tocou, nunca escreva o que nenhum critério pede.
 
+Quando o achado traz `CLASSE`, o contrato é a classe inteira, não a linha citada. Procure por leitura as outras ocorrências nos arquivos que o diff desta peça já toca e nos `arquivo:linha` de `OUTRAS`. Corrija todas. Arquivo que o diff não toca e que o achado não listou fica de fora — a classe não é desculpa para varrer o repositório. No retorno, cada CRITICAL e cada WARN da lista aparece em `Respostas`, sem omissão:
+
+```
+Respostas:
+- [critério] [arquivo:linha]: corrigido — classe: [classe]; ocorrências: [arquivo:linha, ...]
+- [critério] [arquivo:linha]: recusado — [motivo]
+```
+
+`recusado` sem motivo não é resposta: o orquestrador devolve a peça. NIT não entra nesta lista, a menos que a correção da classe tenha resolvido um; nesse caso registre `corrigido` também. Se o orquestrador pedir para registrar a classe em `docs/agents/review-rules-projeto.md`, isso é task da peça — critério no formato dos universais (código, regra, por quê, como checar por leitura, severidade), citando o código universal. Não copie o critério universal inteiro quando ele já descreveria o caso sem nada deste repo.
+
 Os comandos do projeto estão na seção `## Commands` do **arquivo de instruções** da raiz: `AGENTS.md`, ou `CLAUDE.md` quando não houver `AGENTS.md`.
 
 ## Processo
@@ -56,6 +66,8 @@ Os comandos do projeto estão na seção `## Commands` do **arquivo de instruç�
 
    Pela mesma razão, e com a mesma exceção explícita, **`## Commands`** no arquivo de instruções: se a unidade criou o manifesto, ou criou, renomeou ou removeu um script que um label usa, atualize a seção **no mesmo commit**, no formato `- <label>: <comando>`, e apague a linha "Nenhum label ainda", se houver. Declare só script que existe no manifesto e que você rodou nesta peça. Entre candidatos, o gate é o que roda a suite inteira uma vez e termina — nunca modo watch nem e2e. **A peça que cria o manifesto termina com o label `test` declarado**: sem ele, a próxima peça não tem onde rodar o RED. `clean` não é seu: fica para o `/setup-project`, e a falta dele não quebra nada.
 
+   No mesmo commit, alinhe `.github/workflows/ci.yml` a essa seção. O bloco entre as linhas `# pipeline:commands` e `# pipeline:commands-fim` passa a ter um `run:` por label, exceto `clean`, com o comando literal da seção. Arquivo ausente: crie o workflow no formato da Parte 7 do `setup-project` (checkout, setup da stack, o bloco com os marcadores, e o job `audit` só se o manifesto for Node — `npm audit --audit-level=high`). Arquivo presente **sem** os marcadores: não reescreva. A CI deixou de ser o bloco gerenciado; o revisor aponta, quem edita é o dono. Projeto Node que você está criando junto com o manifesto ganha o job `audit`. Projeto que não é Node não ganha audit inventado.
+
 6. **Build único, ao final** — depois que todas as tasks passaram pelo ciclo acima, rode o label `build` de `## Commands` **uma única vez** para a peça inteira. Se falhar, corrija e rode de novo até passar. Nunca pule este passo, mesmo com lint/typecheck/test verdes em toda task — o build cobra erros que o typecheck por arquivo não vê: import circular, path alias quebrado, erros de fronteira que só aparecem quando o bundler monta o todo.
 
 7. Commit único ao final:
@@ -72,7 +84,7 @@ Os comandos do projeto estão na seção `## Commands` do **arquivo de instruç�
 - **Nunca rode o `build` mais de uma vez por peça de trabalho.** `lint`, `typecheck` e `test` rodam a cada task; `build` roda uma vez só, no passo 6.
 - **Durante o ciclo RED/GREEN, rode só o arquivo de teste da task.** A suite inteira entra no gate, quando a task fecha — não a cada assert.
 - **Nunca refatore código que a task não tocou.** Refactoring fora do escopo exige peça de trabalho própria.
-- **Nunca escreva o que nenhum AC pede.** Código sem AC correspondente é invenção — remova. Nada de "já que estou aqui". (A atualização do `architecture.md` e de `## Commands` no passo 5 é a única exceção, e ela não é código de produção.)
+- **Nunca escreva o que nenhum AC pede.** Código sem AC correspondente é invenção — remova. Nada de "já que estou aqui". (A atualização do `architecture.md`, de `## Commands` e do bloco `# pipeline:commands` no passo 5 é a exceção, e ela não é código de produção.)
 - **Não dê push.** Não faça self-review.
 - **Nunca aplique migração.** Escreva-a no repo; quem a aplica, com autorização do usuário, é o orquestrador, depois do PR.
 
@@ -92,7 +104,12 @@ Checks:
 Commit: [hash completo do commit]
 Tasks: [descrição curta de cada task ✅]
 AC→task: [cada acceptance criterion, e a task que o cobre — ou, se já estava satisfeito na peça, o arquivo:linha que o satisfaz]
+Respostas:
+- [critério] [arquivo:linha]: corrigido — classe: [classe]; ocorrências: [arquivo:linha, ...]
+- [critério] [arquivo:linha]: recusado — [motivo]
 ```
+
+O bloco `Respostas` só entra quando a peça é uma lista de achados. Nas outras, omita o bloco inteiro. Cada CRITICAL e cada WARN da lista aparece nele, uma linha, sem omissão.
 
 **Todo label de `## Commands` que você executou aparece nesta lista, um por um, com o próprio resultado** — e com a contagem quando o comando produz contagem, como o `test`. Label que você **não** executou aparece como `não executado`, **nunca omitido**: quem lê o retorno não tem como distinguir "não rodou" de "rodou e eu esqueci de escrever", e é dessa omissão que sai um PR afirmando um número de testes que ninguém mediu. `clean` não entra aqui — não é um gate, é uma ferramenta que você usa no passo 4 quando precisa.
 
