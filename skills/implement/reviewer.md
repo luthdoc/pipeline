@@ -22,7 +22,9 @@ Leia os documentos do item 5 você mesmo. Eles chegam por caminho e não colados
 
 **O que você não recebe é o raciocínio de quem implementou.** Isolamento do raciocínio ≠ isolamento do requisito: a SPEC não é raciocínio de ninguém — é a régua. Esconder a régua não protege independência, só cega a review. É por isso que o campo `## Covers` da SPEC existe: para você conferir cobertura contra o requisito em vez de confiar no texto do ticket.
 
-Numa **re-review** (depois de uma rodada de correção), o prompt contém os achados que você mesmo reportou antes, mais o diff da correção. Ver a seção "Re-review depois de uma correção".
+Numa **re-review** (depois de uma rodada de correção), o prompt contém os achados que você mesmo reportou antes, o bloco `Respostas` do implementador e o diff da correção. Ver a seção "Re-review depois de uma correção".
+
+Numa **passada de segurança**, o prompt diz o modo e traz o diff do PR inteiro (`main...HEAD`) mais a lista de achados que as reviews das unidades já responderam. Ver a seção "Passada de segurança". O teto de duas rodadas da unidade não muda por causa desta passada: ela é um ciclo à parte, disparado pelo orquestrador, e você não abre rodada nenhuma.
 
 ---
 
@@ -64,9 +66,11 @@ Leia por inteiro o `review-rules.md` cujo caminho você recebeu no item 1 — in
 | **SM** code smells | SM1–SM10 sobre a estrutura do que o diff criou | nunca — mas leia a disciplina do eixo antes |
 | **+ projeto** | os critérios de `docs/agents/review-rules-projeto.md`, além dos cinco universais | quando o arquivo não existe no repo |
 
-`docs/agents/review-rules-projeto.md` é opcional e pertence ao projeto: critérios de stack, de framework ou de design system que não fazem sentido fora dele. Quando existe, ele vale tanto quanto os universais, com os códigos e severidades que ele mesmo define.
+`docs/agents/review-rules-projeto.md` pertence ao projeto. O `setup-project` o cria em todo repositório: critérios de stack, a seção `## Risco` (caminhos extras, que não rebaixam a lista padrão) e achado que se repetiu. Quando o arquivo existe, os critérios dele valem tanto quanto os universais, com os códigos e severidades que ele mesmo define. A seção `## Risco` não é critério seu — quem classifica o PR é o orquestrador. Repo antigo, sem o arquivo: pule a linha e siga.
 
-Cada achado precisa de: código do critério, descrição, `arquivo:linha`, e o trecho que serve de evidência.
+Cada achado precisa de: código do critério, descrição, `arquivo:linha`, o trecho que serve de evidência, e — em todo CRITICAL e todo WARN — a **classe**.
+
+**Classe, não a linha.** A classe é uma frase que dá para procurar no resto do diff ("query montada por concatenação com input externo"), não um sinônimo de "esta linha". A correção que você pede cobre todas as ocorrências da classe nos arquivos que o diff toca, não só o `arquivo:linha` citado. Se a leitura do diff mostrar outras ocorrências, liste os `arquivo:linha`: listar não dispensa quem corrige de procurar o que você não viu. Ocorrência da mesma classe em arquivo que o diff não toca fica de fora do pedido — é dívida pré-existente, no máximo NIT, e não é licença para varrer o repositório. Você continua só lendo: procurar na diff é leitura, não é executar teste, lint ou script.
 
 O eixo **SM** é o único de julgamento: todo achado dele é "possível X", nunca violação dura; padrão documentado do repo vence o smell; e **todos os dez são NIT**.
 
@@ -80,7 +84,7 @@ Combine os achados dos eixos com as divergências do passo 2 e priorize:
 
 Achado duplicado entre eixos vira um só, no nível mais alto.
 
-**Marque risco alto.** Para cada CRITICAL, declare se ele é de **risco alto** — segurança ou perda de dado — ou não. É a única classificação que você precisa fazer, e é o que decide o destino do achado se ele sobreviver a duas rodadas: risco alto para o loop e vai ao usuário; o resto vira ticket de follow-up. É classificação de **risco**, não de código, e é por isso que cabe a você.
+**Marque risco alto.** Para cada CRITICAL, declare se ele é de **risco alto** — segurança ou perda de dado — ou não. É o que decide o destino do achado se ele sobreviver a duas rodadas: risco alto para o loop e vai ao usuário; o resto vira ticket de follow-up. É classificação de **risco do achado**, não de código. O rótulo `risk:alto` / `risk:medio` / `risk:baixo` do PR é outra conta: sai dos caminhos do diff e quem faz é o orquestrador. Você não escolhe esse rótulo.
 
 ---
 
@@ -104,17 +108,25 @@ O código do critério e o `arquivo:linha` continuam no achado — quem os usa �
 ACHADOS
 CRITICAL:
 - [critério]: [descrição exata] | [arquivo:linha] | [evidência do diff]
+  CLASSE: [frase que identifica o bug, para achar as outras ocorrências]
+  CORRIGIR: todas as ocorrências desta classe nos arquivos que o diff toca
+  OUTRAS: [arquivo:linha que você viu, ou "nenhuma outra vista"]
   RISCO ALTO: [sim | não]
   [se sim, as três linhas em português comum]
 
 WARN:
 - [critério]: [descrição] | [arquivo:linha] | [evidência]
+  CLASSE: [frase]
+  CORRIGIR: todas as ocorrências desta classe nos arquivos que o diff toca
+  OUTRAS: [arquivo:linha, ou "nenhuma outra vista"]
 
 NIT:
 - [critério]: [descrição] | [arquivo:linha]
 
 RESUMO: [N] críticos ([N] de risco alto), [N] warnings, [N] nits
 ```
+
+NIT não leva classe. NIT não pede varredura: a resposta dele, registrada pelo orquestrador no PR, é que NIT não entra no loop. Você não abre rodada para isso.
 
 Sem CRITICAL nem WARN:
 
@@ -134,15 +146,17 @@ Você recebe: os achados que reportou, e o diff da correção, como o orquestrad
 
 Verifique, nesta ordem:
 
-1. **Cada CRITICAL e WARN da sua lista foi resolvido?** Localize no diff o código que resolve, e confirme que resolve de fato — não que apenas silencia o sintoma.
-2. **A correção introduziu algo novo?** Rode os eixos **apenas sobre o diff da correção**, que é pequeno. Achado novo aqui entra na lista normalmente.
-3. **A correção passou do escopo?** Arquivo tocado que não estava em nenhum achado é achado — a lista de achados é o contrato daquela rodada, do mesmo jeito que acceptance criteria são o contrato de um ticket.
+1. **Cada CRITICAL e WARN da sua lista foi resolvido?** Localize no diff o código que resolve, e confirme que resolve de fato — não que apenas silencia o sintoma. A classe inteira: se sobrou ocorrência da mesma classe num arquivo que o diff da unidade toca, o achado segue pendente, mesmo com a linha citada corrigida.
+2. **Cada um tem resposta?** `corrigido` tem que aparecer no diff, cobrindo a classe. `recusado` tem que trazer motivo que se sustenta lendo o código: falso positivo, fora dos arquivos do diff, ou comportamento que o acceptance criterion pede. Recusa sem motivo, ou motivo que não responde à classe, segue pendente. Concordar com uma recusa que se sustenta conta como resolvido — não exija mudança de código para dar razão a um falso positivo.
+3. **A correção introduziu algo novo?** Rode os eixos **apenas sobre o diff da correção**, que é pequeno. Achado novo aqui entra na lista normalmente, com `CLASSE`.
+4. **A correção passou do escopo?** Arquivo tocado que não estava em nenhum achado, e que não é ocorrência da classe pedida, é achado — a lista de achados é o contrato daquela rodada, do mesmo jeito que acceptance criteria são o contrato de um ticket. Arquivo tocado para cobrir outra ocorrência da classe pedida não é escopo estourado.
 
 ```
 RE-REVIEW
-Resolvidos: [critério] ✅ ([arquivo:linha])
-Pendentes: [critério] ❌ — [por que ainda não resolve]
+Resolvidos: [critério] ✅ ([arquivo:linha]) — classe coberta | recusa aceita: [motivo]
+Pendentes: [critério] ❌ — [por que ainda não resolve: linha, classe que sobrou, ou recusa que não se sustenta]
 Novos: [critério]: [descrição] | [arquivo:linha]
+  CLASSE: [frase]
 RESULTADO: LIMPO | ACHADOS ([N] pendentes, [N] novos)
 ```
 
@@ -164,3 +178,17 @@ ESCALAR
 ```
 
 Um `ESCALAR` que só pode ser formulado como decisão de código não é escalação — é o problema sendo jogado fora. Se não há como enunciá-lo como decisão de produto ou de risco, ele se resolve dentro do loop.
+
+---
+
+## Passada de segurança
+
+O orquestrador abre esta passada quando o PR é `risk:alto` pelos caminhos do diff. Você entra num subagente novo, sem o raciocínio de quem implementou e sem o da review da unidade. O modo vem no prompt; se não vier, você não está nesta passada.
+
+- Percorra **só** S1–S4 de `review-rules.md`. Não percorra T, CL, C, SM, nem `docs/agents/review-rules-projeto.md`.
+- Não execute nada. Não altere nada. Não delegue. As restrições absolutas do topo continuam valendo.
+- Não reabra achado que o prompt listar como já respondido (`corrigido` ou `recusado` com motivo). Achado novo, que a review da unidade não respondeu, entra normal.
+- Cada CRITICAL e WARN leva `CLASSE`, como na review nova. A classe pede a correção de todas as ocorrências nos arquivos que este diff toca.
+- O retorno é o mesmo `ACHADOS` / `LIMPO`. `ESCALAR` continua valendo, com a mesma régua: migração que os acceptance criteria pedem não é, por si, motivo de escalar.
+
+Esta passada não é uma terceira rodada da unidade. Você faz um passe. Se o orquestrador devolver uma correção, a re-review seguinte é incremental, pelas regras da seção anterior, restrita a S1–S4. Você não pede outro ciclo.

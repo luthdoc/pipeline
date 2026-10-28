@@ -11,17 +11,39 @@ Um critério só pertence a este arquivo se o revisor puder julgá-lo **lendo o 
 
 Numa equipe real ninguém pede ao revisor que rode `npm audit`, e ninguém audita se o autor escreveu o teste primeiro. As duas regras estão no papel errado.
 
+## O que um achado pede
+
+O revisor aponta a **classe** do bug, não só a linha. Quem corrige é o `implementer`, e a correção cobre todas as ocorrências daquela classe nos arquivos que o diff toca. O formato (`CLASSE`, `CORRIGIR`, `OUTRAS`) está no `reviewer.md`. Arquivo que o diff não toca não entra na varredura.
+
+Todo CRITICAL e todo WARN volta com resposta: `corrigido`, ou `recusado` com motivo. A resposta vai para `## Achados do revisor` no corpo do PR. Resposta faltando conta como pendente. NIT não abre rodada e não vira ticket; a resposta registrada no PR é `recusado: NIT — não entra no loop de correção`. O teto de rodadas da unidade continua 2. A passada de segurança de um PR `risk:alto` é um ciclo à parte, só S1–S4, e não sobe esse teto.
+
+## Bug que escapa vira regra
+
+Bug que chegou na `main` ou na produção já passou por todas as camadas. O passo é achar qual deveria ter pego, e registrar a correção **nessa** camada. "Revisar com mais atenção" não é correção.
+
+| Camada | A correção mora em |
+|---|---|
+| Teste | teste de regressão no repositório, no seam que `docs/agents/architecture.md` descreve |
+| Lint | a regra do linter do projeto |
+| CI | `.github/workflows/ci.yml`, no bloco `# pipeline:commands` ou no job `audit` |
+| Review | critério em `docs/agents/review-rules-projeto.md`. Se a falha valer para qualquer stack, o critério é universal e a correção é neste arquivo, não uma cópia dentro do projeto |
+| Convenção do repo | `AGENTS.md` ou `CLAUDE.md`, uma linha, com ponteiro se o detalhe for longo |
+
+Achado do revisor com a **mesma classe** em dois PRs sobe para `docs/agents/review-rules-projeto.md` mesmo sem ter chegado na `main`. Quem sobe, dentro do loop, é o `implement`. Critério universal que já descreveria o caso, sem nada deste projeto, não é copiado: o que entra é a forma concreta que o universal não deixou óbvia, citando o código daqui.
+
+`docs/agents/review-rules-projeto.md` existe em todo projeto que passou pelo `setup-project`. A seção `## Risco` dele só acrescenta caminhos à classificação do PR. A lista padrão mora na skill `implement`, seção "Risco do PR", e um bullet do projeto não a rebaixa.
+
 ## Os eixos
 
 Cinco eixos universais, nesta ordem de severidade: **S** segurança, **T** testes, **CL** limpeza, **C** complexidade, **SM** code smells.
 
-Critérios de stack, de framework ou de design system não moram aqui — valem só para um projeto, e moram em `docs/agents/review-rules-projeto.md` do próprio projeto, quando ele os tem.
+Critérios de stack, de framework ou de design system não moram aqui — valem só para um projeto, e moram em `docs/agents/review-rules-projeto.md` do próprio projeto. O `setup-project` cria esse arquivo em todo repositório; a ausência dele é repo configurado por uma versão anterior, e o revisor segue só com os universais.
 
 Reporte só achados com evidência concreta — `arquivo:linha` mais o trecho que sustenta. Suspeita sem evidência não é achado.
 
 Escopo: **o que o diff mudou**. Dívida pré-existente que o diff apenas tangenciou é NIT, nunca bloqueio deste ticket.
 
-**Marque risco alto.** Para cada CRITICAL, diga se ele é de risco alto — segurança ou perda de dado. É a única classificação que decide o destino do achado se ele sobreviver a duas rodadas de correção.
+**Marque risco alto.** Para cada CRITICAL, diga se ele é de risco alto — segurança ou perda de dado. É a classificação que decide o destino do achado se ele sobreviver a duas rodadas de correção. Não é o rótulo `risk:*` do PR: esse sai dos caminhos do diff, e quem calcula é o orquestrador.
 
 ---
 
@@ -83,7 +105,7 @@ return await db.users.findById(id);
 return await db.users.findById(id, { select: ['id', 'name', 'email'] });
 ```
 
-> **Vulnerabilidade de dependência não é critério de review.** Ela exige executar `npm audit`, e o revisor não executa nada — cai na regra de admissão. Vive na CI (`.github/workflows/ci.yml`), que roda `npm audit --audit-level=high` num checkout limpo. E o lugar é esse por um motivo mais forte que a ferramenta: vulnerabilidade não aparece porque alguém mexeu no manifesto, aparece porque alguém publicou um aviso sobre um pacote que já estava lá. Um gate condicional ao diff nunca pegaria o caso comum.
+> **Vulnerabilidade de dependência não é critério de review.** Ela exige executar `npm audit`, e o revisor não executa nada — cai na regra de admissão. Vive na CI (`.github/workflows/ci.yml`), que o `setup-project` grava e que roda `npm audit --audit-level=high` num checkout limpo, em todo PR de projeto Node. `high` falha o job em vulnerabilidade alta ou crítica; `moderate` fica de fora para o aviso transitivo sem correção não pintar todo PR de vermelho. O lugar é esse por um motivo mais forte que a ferramenta: vulnerabilidade não aparece porque alguém mexeu no manifesto, aparece porque alguém publicou um aviso sobre um pacote que já estava lá. Um gate condicional ao diff nunca pegaria o caso comum.
 
 ---
 
@@ -264,11 +286,11 @@ function formatUserDisplayName(user: User) { ... }
 
 **Por quê:** o `architecture.md` é lido por `to-spec`, `to-tickets`, `implementer` e pelo próprio revisor — é o que evita quatro etapas relerem o repo inteiro. `## Commands` é de onde o `implement` e o `implementer` tiram os gates: desatualizada, ela manda rodar comando que não existe; vazia num repo com código, a próxima unidade passa sem gate nenhum. Documento vivo sem fiscal apodrece sozinho: o dono é o `implementer`, e quem cobra é você. Sem isso, a posse existe no papel e ninguém a exerce.
 
-**Como checar** — por leitura do diff, sem executar nada: liste os arquivos criados em diretório de módulo ou em diretório novo, e os que cruzaram uma fronteira listada no `architecture.md`. Para cada um, procure `docs/agents/architecture.md` na lista de arquivos do diff. Ausente = achado. Depois, procure manifesto (`package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`) entre os arquivos do diff: criado, ou com script de gate alterado, exige `AGENTS.md` (ou `CLAUDE.md`) no diff com a mudança em `## Commands`, cada label apontando para um script que existe no manifesto. Ausente, label sem script, ou manifesto novo sem `test` = achado.
+**Como checar** — por leitura do diff, sem executar nada: liste os arquivos criados em diretório de módulo ou em diretório novo, e os que cruzaram uma fronteira listada no `architecture.md`. Para cada um, procure `docs/agents/architecture.md` na lista de arquivos do diff. Ausente = achado. Depois, procure manifesto (`package.json`, `Cargo.toml`, `pyproject.toml`, `go.mod`) entre os arquivos do diff: criado, ou com script de gate alterado, exige `AGENTS.md` (ou `CLAUDE.md`) no diff com a mudança em `## Commands`, cada label apontando para um script que existe no manifesto. Ausente, label sem script, ou manifesto novo sem `test` = achado. O mesmo diff exige `.github/workflows/ci.yml`: os comandos entre `# pipeline:commands` e `# pipeline:commands-fim` iguais aos labels de `## Commands`, exceto `clean`, e o job `audit` com `npm audit --audit-level=high` quando o manifesto é `package.json`. Workflow sem os marcadores, com os gates mudados: o achado pede alinhamento à mão — o bloco gerenciado não existe, e reescrever a CI do projeto não é o conserto. Diff que não cria manifesto nem muda script de gate: ausência do workflow não é achado. Quem cria o arquivo num repo já configurado é o `setup-project`.
 
 **Severidade: WARN.** O conserto é cirúrgico — uma linha na tabela "Onde cada coisa mora", ou em `## Commands` — e não trava o loop.
 
-**Não é achado:** arquivo novo que é só mais uma instância de um padrão já documentado (uma rota, uma página); teste novo num seam que já existe; edição de arquivo existente que não muda camada, seam nem invariante; a simples ausência de `docs/agents/architecture.md` no repo quando o diff não faz mudança estrutural — o `setup-project` o gera, e o `implementer` o cria na primeira mudança estrutural; mudança no manifesto que não toca script de gate (dependência, versão, metadado); `clean` ausente.
+**Não é achado:** arquivo novo que é só mais uma instância de um padrão já documentado (uma rota, uma página); teste novo num seam que já existe; edição de arquivo existente que não muda camada, seam nem invariante; a simples ausência de `docs/agents/architecture.md` no repo quando o diff não faz mudança estrutural — o `setup-project` o gera, e o `implementer` o cria na primeira mudança estrutural; mudança no manifesto que não toca script de gate (dependência, versão, metadado); `clean` ausente; ausência de `.github/workflows/ci.yml` quando o diff não cria manifesto nem muda script de gate; job `audit` ausente em projeto que não tem `package.json`.
 
 ---
 

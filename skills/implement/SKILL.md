@@ -212,7 +212,7 @@ Com tracker, **não mova a label aqui**. A review é parte do loop: a unidade se
 
 ### 4 — Arbitragem
 
-**Aprovado** se o revisor retornou `LIMPO` ou só NIT. Vá para 5. Os NITs vão para o corpo do PR e morrem lá — **NIT não vira ticket**, não há limiar nem contador.
+**Aprovado** se o revisor retornou `LIMPO` ou só NIT. Vá para 5. Os NITs vão para `## Achados do revisor` no corpo do PR, cada um com a resposta `recusado: NIT — não entra no loop de correção`. **NIT não abre rodada e não vira ticket** — não há limiar nem contador. O teto de rodadas continua 2.
 
 **Há CRITICAL ou WARN** e `loop_count < 2`:
 
@@ -220,9 +220,11 @@ Com tracker, **não mova a label aqui**. A review é parte do loop: a unidade se
 loop_count += 1
 ```
 
-Registre `git rev-parse HEAD` — é a base da correção. Abra o worker `implementer.md` de novo, passando: a referência da unidade, a branch, **a lista de achados CRITICAL e WARN verbatim** como peça de trabalho, e o caminho de `review-rules.md` — o implementador consulta ali o critério pelo código de cada achado. A lista de achados é o contrato dele; o mandato estreito já está escrito nas "Restrições absolutas" do arquivo dele — não repita nem invente um segundo contrato aqui. Peça de volta `IMPLEMENTADO` ou `ESCALAR`.
+Registre `git rev-parse HEAD` — é a base da correção. Abra o worker `implementer.md` de novo, passando: a referência da unidade, a branch, **a lista de achados CRITICAL e WARN verbatim** (com a `CLASSE` de cada um) como peça de trabalho, e o caminho de `review-rules.md` — o implementador consulta ali o critério pelo código de cada achado. A lista de achados é o contrato dele; o mandato estreito já está escrito nas "Restrições absolutas" do arquivo dele — não repita nem invente um segundo contrato aqui. Peça de volta `IMPLEMENTADO` ou `ESCALAR`, e o bloco `Respostas`: cada CRITICAL e cada WARN como `corrigido` ou `recusado` com motivo. Resposta faltando não é `IMPLEMENTADO` — devolva a peça **uma vez**, apontando qual achado ficou sem resposta. Essa devolução não incrementa `loop_count`. Na segunda volta sem resposta, o achado fica pendente e a arbitragem segue com ele aberto.
 
-Depois da correção, volte ao revisor — mas em modo **re-review incremental**, não review nova. Abra o worker `reviewer.md` passando: o caminho de `review-rules.md`, a lista verbatim dos achados da review anterior, o diff da correção (`git diff <base da correção>..HEAD`), e a instrução de seguir a seção "Re-review depois de uma correção", sem refazer a review completa.
+**Classe repetida.** Se o achado traz `CLASSE`, procure a mesma frase de classe nos corpos de PR deste repo: `gh pr list --state all --limit 30`, e leia o corpo dos que tiverem `## Achados do revisor`. Segunda ocorrência da mesma classe: ela sobe para `docs/agents/review-rules-projeto.md`. Não copie critério universal que já pegaria o caso sem nada deste repo. O que entra é a forma concreta — um critério no formato dos universais, com o código universal citado e um "como checar" do que escapou aqui. Quem grava é o `implementer`, como task desta correção, enquanto `loop_count < 2`. Se o teto já estourou, o follow-up ou o bloqueio leva a linha "promover a classe para `review-rules-projeto.md`", em vez de uma terceira rodada. Classe que o universal cobre por inteiro, sem forma local: não crie critério, e diga isso na resposta do achado.
+
+Depois da correção, volte ao revisor — mas em modo **re-review incremental**, não review nova. Abra o worker `reviewer.md` passando: o caminho de `review-rules.md`, a lista verbatim dos achados da review anterior, o bloco `Respostas` do implementador, o diff da correção (`git diff <base da correção>..HEAD`), e a instrução de seguir a seção "Re-review depois de uma correção", sem refazer a review completa. Recusa que a re-review aceitar conta como resolvida. Recusa que ela rejeitar segue pendente.
 
 Se a re-review voltar `LIMPO`, vá para 5. Se voltar `ACHADOS`, repita a arbitragem.
 
@@ -247,7 +249,7 @@ Ele **não** entra na fronteira da SPEC corrente, **não** conta para a condiç�
 
 ### 5 — Concluir a unidade
 
-Com tracker, registre a evidência e encerre o estado da unidade. Grave num arquivo em `.scratch/` o comentário — "Implementado e aprovado", o commit, os achados do revisor (quantos, e se foram resolvidos) e o bloco `Checks` do retorno do implementer, colado label por label — e rode:
+Com tracker, registre a evidência e encerre o estado da unidade. Grave num arquivo em `.scratch/` o comentário — "Implementado e aprovado", o commit, os achados do revisor com a resposta de cada um (`corrigido` ou `recusado` e o motivo; NIT com a resposta fixa de NIT) e o bloco `Checks` do retorno do implementer, colado label por label — e rode:
 
 ```bash
 gh issue comment [N] --body-file [arquivo]
@@ -320,24 +322,91 @@ Não existe label `done`. Issue fechada já é a informação.
 
 ---
 
+## Risco do PR
+
+A classe de risco é dos **caminhos do diff**, não de quem pediu a mudança e não do que o `implementer` acha. Você calcula. Não confunda com o `RISCO ALTO` de um achado CRITICAL (segurança ou perda de dado): um PR `risk:alto` pode não ter achado nenhum, e um achado de risco alto pode existir num PR `risk:medio`. As duas classificações decidem coisas diferentes. A do achado decide bloqueio contra follow-up depois de duas rodadas. A do PR decide o rótulo, a linha que o dono lê, e se há passada de segurança.
+
+**Quando:** só no momento de abrir o PR, antes do push que precede o `gh pr create`. Push de ticket cujo pai ainda tem irmão aberto não classifica e não dispara passada — o diff ainda vai mudar, e não há PR para rotular. Diff: `git diff main...HEAD --name-only`. Se a passada de segurança gerar commit, calcule de novo no diff final. Corpo e rótulo usam esse segundo resultado.
+
+**Listas.** A padrão, abaixo, sempre vale. `docs/agents/review-rules-projeto.md`, seção `## Risco`, só acrescenta: cada bullet de `### Alto` ou `### Baixo` é um prefixo de caminho ou um nome de arquivo. "Nenhum caminho extra." não acrescenta nada. Arquivo ou seção ausente: siga só com a padrão. Bullet do projeto **não rebaixa** caminho que a padrão já marca como alto.
+
+**Casar com a lista padrão.**
+
+- **Prefixo:** o caminho é o prefixo, começa com ele, ou o contém como diretório (`supabase/migrations/` casa com `packages/app/supabase/migrations/001.sql`). Compare sem distinguir maiúsculas. `migrations-helper.ts` não tem o prefixo `migrations/` e não é migração.
+- **Token:** um segmento do caminho (entre `/`) ou um pedaço do nome do arquivo. No nome, separe por `.`, `-`, `_` e por fronteira de camelCase, onde uma minúscula encontra uma maiúscula (`useAuth` → `use` e `Auth`; `enableRLS` → `enable` e `RLS`). Compare cada pedaço com a palavra, sem distinguir maiúsculas. `author` não é `auth`. `authors` não é `auth`. `AuthorCard` não é `auth`.
+
+**Alto** — um caminho basta:
+
+| Classe | Casa |
+|---|---|
+| Migração de banco | prefixo `supabase/migrations/`, `prisma/migrations/`, `drizzle/migrations/`, `db/migrate/`, `db/migrations/`, `migrations/`, `alembic/versions/` |
+| Autenticação, RLS, permissão | token `auth`, `authentication`, `rls`, `permission`, `permissions`, `rbac` |
+| Cobrança, pagamento | token `billing`, `payment`, `payments`, `stripe`, `checkout`, `subscription`, `invoice` |
+| CI | prefixo `.github/workflows/`, `.circleci/`; arquivo `.gitlab-ci.yml` |
+| Ambiente e deploy | arquivo `.env` ou nome que começa com `.env.`; arquivo `vercel.json`, `vercel.ts`, `fly.toml`, `render.yaml`, `netlify.toml`, `wrangler.toml`; nome `Dockerfile` ou que começa com `Dockerfile.`; nome `docker-compose.yml`, `docker-compose.yaml`, ou que começa com `docker-compose.` |
+
+**Baixo** — só quando **todo** caminho casa com uma destas extensões de arquivo: `md`, `mdx`, `txt`, `rst`, `css`, `scss`, `sass`, `less`, `png`, `jpg`, `jpeg`, `gif`, `webp`, `svg`. Arquivo `.ts` dentro de `docs/` não é baixo. Bullet do projeto em `### Baixo` entra na mesma conta: o PR só é baixo se cada caminho for baixo pela lista padrão ou por um bullet desses.
+
+**Resultado, nesta ordem:**
+
+1. Algum caminho na lista alto (padrão ou do projeto) → `risk:alto`
+2. Senão, todo caminho na lista baixo (padrão ou do projeto) → `risk:baixo`
+3. Senão → `risk:medio`
+
+A linha é uma só. Ela vai em `## Risco` no corpo do PR e no relatório final, copiada, não reescrita:
+
+> `risk:alto` — toca `supabase/migrations/004_rls.sql` (migração) e `.github/workflows/ci.yml` (CI).
+
+Cite cada caminho que decidiu a classe, e qual classe foi. Em `risk:medio`, diga que nenhum caminho está na lista alto e que o diff não é só documentação, texto ou estilo. Em `risk:baixo`, diga que todos os caminhos são documentação, texto ou estilo.
+
+### Passada de segurança
+
+Só em `risk:alto`. Abra um subagente novo, contexto limpo, prompt `reviewer.md`, em modo **passada de segurança**. Passe: o caminho absoluto de `review-rules.md`, o diff `git diff main...HEAD`, a raiz absoluta do repositório, e a lista de achados que as reviews das unidades já responderam (`corrigido` ou `recusado` com motivo). A instrução é a seção "Passada de segurança" do `reviewer.md`: só S1–S4. Não passe nota do `implementer`. A classificação explica por que a passada existe; ela não diz o que a passada tem que concluir.
+
+Essa passada **não soma no `loop_count`** e não sobe o teto de 2 da unidade. O ciclo dela é um:
+
+- `LIMPO`, ou só NIT → no corpo, "Passada de segurança: limpa". NIT segue a resposta fixa de NIT.
+- CRITICAL ou WARN → uma correção pelo `implementer`, com os achados verbatim e a classe, e uma re-review incremental dessa correção, no mesmo modo. Não repita o ciclo.
+- Achado de risco alto ainda aberto depois desse ciclo → Protocolo de Bloqueio. O PR não abre.
+- O que sobrar → ticket de follow-up, como na arbitragem, e o PR abre declarando.
+
+Achado que a review da unidade já respondeu não se reabre aqui. O revisor recebe essa lista para não repetir.
+
+---
+
 ## Abrir o PR
 
-**Quando:** com tracker, o PR só abre quando a **SPEC inteira** fecha — todos os tickets fechados. Ticket cujo pai ainda tem irmãos abertos: dê push na branch, reporte o que falta, e **não abra PR**. Senão a SPEC chega na `main` em pedaços.
+**Quando:** com tracker, o PR só abre quando a **SPEC inteira** fecha — todos os tickets fechados. Ticket cujo pai ainda tem irmãos abertos: dê push na branch, reporte o que falta, e **não abra PR** — sem classificação de risco e sem passada de segurança. Senão a SPEC chega na `main` em pedaços. Na abertura de fato, a classificação e a passada acontecem antes deste push; um commit da passada entra nele.
 
 ```bash
 git push origin [BRANCH]
 ```
 
-Abra com `gh pr create --draft --base main --title "[título da unidade]" --body-file [arquivo]`. Com SPEC fatiada, mova a SPEC para `in-review` logo depois (ver "Transições de estado"). O corpo, gravado antes num arquivo em `.scratch/`, contém:
+**Rótulos.** Antes de criar o PR, garanta os três, com o mesmo comando do `setup-project` (`--force` alinha cor e descrição se já existirem):
+
+```bash
+gh label create "risk:alto" --color "B60205" --description "PR toca migracao, auth, cobranca, CI ou deploy" --force
+gh label create "risk:medio" --color "FBCA04" --description "PR fora das listas de alto e de baixo" --force
+gh label create "risk:baixo" --color "0E8A16" --description "PR so de documentacao, texto ou estilo" --force
+```
+
+Abra com `gh pr create --draft --base main --title "[título da unidade]" --body-file [arquivo] --label "[risk:alto | risk:medio | risk:baixo]"`. O `--label` leva só o rótulo calculado. Na retomada, se o PR já existe, `gh pr edit [PR] --add-label "[rótulo]"` e remova os outros dois `risk:*` que estiverem aplicados. Sem `gh`, grave a linha no corpo e diga no relatório que o rótulo não foi aplicado. Com SPEC fatiada, mova a SPEC para `in-review` logo depois (ver "Transições de estado"). O corpo, gravado antes num arquivo em `.scratch/`, contém:
 
 - **`Closes #N`** — da SPEC (o pai, quando a unidade é ticket), ou da issue sem pai e sem tickets. Os tickets já estão fechados; liste-os em "O que entrou", não em `Closes`. A palavra-chave é **literal em inglês**: o GitHub só reconhece `close/closes/closed`, `fix/fixes/fixed`, `resolve/resolves/resolved`. Traduzir (`Fecha #27`) **falha em silêncio** — a linha é ignorada, o PR merga e as issues ficam abertas com o código na `main`. Já aconteceu. O resto do corpo continua em português. Omitir só sem tracker, que não tem issue.
-- **O que entrou** — a lista de unidades implementadas, ou a descrição do que foi acordado no grill
-- **Evidência por unidade** — commit, achados do revisor, e em quantos loops foram resolvidos
-- **Gates finais** — o bloco `Checks` do retorno do `implementer`, **colado**, label por label; `não reportado` para o que não veio
-- **Ficou de fora** — os tickets de follow-up abertos na arbitragem, cada um com número e uma linha em português; e os NITs do revisor
-- **Baseline** — se ela estava vermelha no Bootstrap e o usuário mandou seguir, diga o quê estava vermelho
-- **Review sem independência** — se a ferramenta não abriu subagentes e você mesmo revisou, diga isso
-- **Aplicação em produção** — se o diff traz migração, os arquivos e o estado: "aguardando autorização" ou "sem meio de aplicar" (ver "Aplicar em produção")
+- **`## O que entrou`** — a lista de unidades implementadas, ou a descrição do que foi acordado no grill
+- **`## Como foi testado`** — o bloco `Checks` do retorno do `implementer`, **colado**, label por label, uma subseção por unidade quando houver mais de uma; `não reportado` para o que não veio. É o bloco que antes se chamava "Gates finais".
+- **`## Risco`** — a linha calculada em "Risco do PR", com o motivo. Sem esta seção o PR não abre: a frase não fica só no chat.
+- **`## Como desfazer`** — em todo PR, não só quando há migração. Três linhas, curtas:
+  - Ainda em draft: fechar o PR sem mergear. Nada entrou na `main`.
+  - Depois do merge: `git revert` do merge commit.
+  - Deploy: se o projeto tem `vercel.json`, `vercel.ts`, ou o arquivo de instruções diz Vercel, rollback para o deployment anterior. Senão, o revert na `main` e o deploy que a `main` dispara. Não invente painel que o repo não usa.
+  - Se o diff traz migração, uma quarta linha: o revert do git não desfaz schema. O reverso, a ordem com o merge e o que se perde estão no comentário da pergunta de aplicação. Não reescreva essa pergunta nesta seção.
+- **`## Achados do revisor`** — cada CRITICAL, WARN e NIT das unidades, e os da passada de segurança, com a resposta: `corrigido` (classe e ocorrências) ou `recusado` (motivo). NIT leva `recusado: NIT — não entra no loop de correção`. Sem achado, a seção diz "Nenhum achado." Passada de segurança limpa: a linha "Passada de segurança: limpa".
+- **`## Ficou de fora`** — os tickets de follow-up abertos na arbitragem, cada um com número e uma linha em português. Sem follow-up, "Nada ficou de fora."
+- **Evidência por unidade** — commit, em quantos loops os achados foram resolvidos
+- **Baseline** — se ela estava vermelha no Bootstrap e o usuário mandou seguir, diga o quê estava vermelho. Pode ficar no fim de `## Como foi testado`.
+- **Review sem independência** — se a ferramenta não abriu subagentes e você mesmo revisou, diga isso em `## Achados do revisor`
+- **Aplicação em produção** — se o diff traz migração, os arquivos e o estado: "aguardando autorização" ou "sem meio de aplicar" (ver "Aplicar em produção"). Esta seção não substitui `## Como desfazer` nem a pergunta formal.
 - a linha de atribuição que a sua ferramenta usa em PRs, se ela tiver uma
 
 **Não faça merge.** O PR sai em draft e a decisão de merge é do usuário.
@@ -377,7 +446,7 @@ Com o "sim":
 1. Se o usuário escolheu aplicar depois do merge, espere a confirmação dele no chat de que o merge e o deploy aconteceram. Antes de aplicar, consulte o histórico de migrações do alvo pelo mesmo meio e aplique só as que ainda não estão lá — uma retomada não reaplica o que já entrou. Se o meio não expõe histórico, numa retomada não aplique nada antes de perguntar ao usuário quais já estão no banco. Aplique um arquivo por vez, na ordem.
 2. Verifique só com consultas de leitura — as que confirmam que o schema ficou como a migração descreve. Nada que escreva em produção roda fora do que foi autorizado.
 3. Regenere os artefatos derivados do schema que o projeto documenta — no `architecture.md` ou no arquivo de instruções (ex: tipos gerados do banco). Se mudou arquivo, rode `typecheck` e `build` de `## Commands`; com os dois verdes, commite (`chore({ref}): regenera ... após aplicar a migração`, com `{ref}` = a SPEC ou a issue sem tickets; sem tracker, o slug da branch) e dê push. Vermelho é falha: veja abaixo.
-4. Comente no PR "Migrações aplicadas", com a lista, o resultado da verificação e o dos gates. Sem artefato derivado documentado, diga "nenhum artefato derivado documentado; nada regenerado". Atualize a linha "Aplicação em produção" do corpo (`gh pr edit [PR] --body-file [arquivo]`). Avise no comentário que **fechar o PR sem merge exige desfazer a migração** — o banco já está com o schema novo.
+4. Comente no PR "Migrações aplicadas", com a lista, o resultado da verificação e o dos gates. Sem artefato derivado documentado, diga "nenhum artefato derivado documentado; nada regenerado". Atualize a linha "Aplicação em produção" do corpo (`gh pr edit [PR] --body-file [arquivo]`). O arquivo é o corpo inteiro regravado: copie `## Como foi testado`, `## Risco`, `## Como desfazer` e `## Achados do revisor` como estão, e mude só a linha de aplicação. Apagar uma dessas seções na atualização é regressão. Avise no comentário que **fechar o PR sem merge exige desfazer a migração** — o banco já está com o schema novo. A pergunta formal (alvo, ordem, reverso, o que se perde) não é substituída por `## Como desfazer`.
 
 **Falha** — ao aplicar, na verificação ou nos gates depois de regenerar: pare. Não tente consertar direto no banco nem reverter sem perguntar — um conserto improvisado em produção é exatamente a decisão irreversível que não cabe a um agente. Comente no PR "Aplicação bloqueada", com quais migrações foram aplicadas e quais não, e o erro colado — é esse comentário que impede a retomada de passar por cima do bloqueio. Depois siga o Protocolo de Bloqueio. Uma migração corrigida depois disso passa pela pergunta de novo.
 
@@ -385,13 +454,15 @@ Com o "sim":
 
 ## Relatório final
 
-O PR fica em draft esperando uma decisão humana, e quem decide é o dono do repositório — que pode não ler código. Seu relatório é o que torna essa decisão possível, e ela é **de risco, não de código**. Três blocos, em português comum:
+O PR fica em draft esperando uma decisão humana, e quem decide é o dono do repositório — que pode não ler código. Seu relatório é o que torna essa decisão possível, e ela é **de risco, não de código**. A linha de risco do relatório é a mesma de `## Risco` no corpo do PR — copie, não reescreva. Se as duas divergirem, vale a do PR e você corrige o chat. Blocos, em português comum:
 
 > **O que entrou:** [em linguagem de produto — o que passou a funcionar, não quais arquivos mudaram]
 >
 > **O que ficou de fora:** [cada follow-up, com o que acontece se continuar assim]
 >
-> **Risco de mergear assim:** [alto / médio / baixo, e por quê — em uma frase que não exija ler o diff]
+> **Risco de mergear assim:** [a linha de `## Risco`, literal]
+>
+> **Como desfazer:** [a seção `## Como desfazer`, em uma ou duas frases]
 >
 > **Migrações:** [aplicadas / aguardando autorização / sem meio de aplicar] — se não aplicadas, diga se o merge espera a aplicação
 
@@ -403,7 +474,7 @@ Informe a URL do PR. Se a SPEC veio de um PRD, informe que a próxima SPEC pode 
 
 ## Protocolo de Bloqueio
 
-Ativado quando: achado de risco alto não resolvido após 2 loops; worker retorna ESCALAR; hard stop por princípio; implementador falha sem retornar IMPLEMENTADO; baseline vermelha no Bootstrap; falha em "Aplicar em produção".
+Ativado quando: achado de risco alto não resolvido após 2 loops; achado de risco alto ainda aberto depois do ciclo único da passada de segurança; worker retorna ESCALAR; hard stop por princípio; implementador falha sem retornar IMPLEMENTADO; baseline vermelha no Bootstrap; falha em "Aplicar em produção". No bloqueio que veio da passada de segurança, `Loops executados` continua sendo o da unidade (N de 2); acrescente a linha "Passada de segurança: 1 ciclo, achado de risco alto ainda aberto".
 
 **Regra canônica de escalação:** toda escalação ao humano é formulada como decisão de **produto** ou de **risco**, nunca como decisão de **código**. Problema que só pode ser formulado como decisão de código **tem que ser resolvido dentro do loop** — não existe engenheiro do outro lado para quem empurrá-lo. "Resolva os achados acima manualmente" não é uma saída; é jogar o problema fora.
 

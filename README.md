@@ -28,11 +28,11 @@ to-prd  →  to-spec  →  to-tickets (se não couber numa janela)  →  impleme
 
 | Skill | O que faz |
 |---|---|
-| `setup-project` | Configura o repo: tracker, labels, `## Commands`, `## Fluxo`, remote. Uma vez por projeto. |
+| `setup-project` | Configura o repo: tracker, labels, `## Commands`, `## Fluxo`, remote, template de PR, CI, rótulos de risco. Uma vez por projeto. |
 | `to-prd` | Escreve `docs/prd.md` — requisitos e a lista de SPECs. |
 | `to-spec` | Transforma a conversa numa SPEC publicada no tracker. |
 | `to-tickets` | Fatia uma SPEC em tickets verticais com dependências. |
-| `implement` | Loop implementar → revisar → corrigir → re-revisar, com branch e PR. |
+| `implement` | Loop implementar → revisar → corrigir → re-revisar, com branch e PR. O PR sai com risco, gates e como desfazer. |
 
 ## Agentes
 
@@ -53,4 +53,14 @@ O pipeline é genérico. O que é de cada projeto mora no repo do projeto, gerad
 - `docs/agents/issue-tracker.md` — comandos do tracker e vocabulário de labels.
 - `docs/agents/architecture.md` — mapa de módulos, seams e invariantes, lido pelos agentes. Gerado pelo `setup-project`, mantido pelo `implementer`.
 - `CLAUDE.md` com `@AGENTS.md` — só quando a ferramenta não lê `AGENTS.md` sozinha (ex: Claude Code). Criado pelo `setup-project`.
-- `docs/agents/review-rules-projeto.md` *(opcional)* — critérios de review específicos da stack ou do design system do projeto. O revisor lê junto com os universais.
+- `docs/agents/review-rules-projeto.md` — critérios de review da stack ou do design system, caminhos extras de risco do PR, e achado do revisor que se repetiu. O `setup-project` cria o arquivo em todo projeto. O revisor lê os critérios junto com os universais. A lista padrão de risco (migração, auth, cobrança, CI, deploy) mora na skill `implement` e não se rebaixa daqui.
+- `.github/pull_request_template.md` — as seções em que o dono decide o merge: Como foi testado, Risco, Como desfazer.
+- `.github/workflows/ci.yml` — em todo PR, os gates de `## Commands` (exceto `clean`) e, em projeto Node, `npm audit --audit-level=high`.
+
+## Quando um bug chega na main
+
+Um bug na `main` ou em produção é falha de uma camada. O passo é curto — não é "revisar com mais cuidado" na próxima vez:
+
+1. Diga qual camada deveria ter pego: teste, lint, CI, regra de review, ou o arquivo de instruções (`AGENTS.md` / `CLAUDE.md`).
+2. Registre a correção nessa camada. Teste de regressão no repositório. Regra no linter. Passo em `.github/workflows/ci.yml`. Critério em `docs/agents/review-rules-projeto.md` — ou no `review-rules.md` do pipeline, se a falha valer para qualquer stack. Convenção do repo, uma linha no arquivo de instruções.
+3. Achado do revisor com a mesma classe em dois PRs sobe para `docs/agents/review-rules-projeto.md` mesmo sem ter chegado na `main`. O `implement` faz isso dentro do loop, sem abrir uma terceira rodada.
