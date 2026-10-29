@@ -199,6 +199,7 @@ Vocabulário padrão sugerido — apresente ao usuário para confirmação ou aj
 | `ready-for-agent` | Pronta para um agente autônomo (AFK) implementar sem supervisão |
 | `ready-for-human` | Bloqueada — aguardando decisão ou ação humana |
 | `needs-triage` | Ainda não avaliada por um maintainer |
+| `needs-spec` | Precisa de SPEC antes de implementar |
 | `in-progress` | Agente no loop — implementando ou em review |
 | `in-review` | Aprovada pelo revisor, aguardando merge (só SPEC ou issue sem tickets) |
 
@@ -221,6 +222,7 @@ Para GitHub Issues, crie (idempotente, `--force` sobrescreve se já existir) as 
 gh label create "ready-for-agent" --color "0E8A16" --description "Pronta para agente autônomo implementar" --force
 gh label create "ready-for-human" --color "D93F0B" --description "Bloqueada, aguardando ação humana" --force
 gh label create "needs-triage" --color "FBCA04" --description "Ainda não avaliada por um maintainer" --force
+gh label create "needs-spec" --color "C5DEF5" --description "Precisa de SPEC antes de implementar" --force
 gh label create "in-progress" --color "1D76DB" --description "Agente no loop: implementação e review" --force
 gh label create "in-review" --color "5319E7" --description "Aprovada, aguardando merge (SPEC ou issue sem tickets)" --force
 ```

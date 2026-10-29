@@ -67,6 +67,8 @@ After publishing, show the user the breakdown in plain product language — one 
 
 **Remove `ready-for-agent` from the parent spec.** Once a spec is sliced, it is no longer grabbable — its tickets are. Leaving the label on both makes `gh issue list --label ready-for-agent` return the spec and its tickets flattened into one list with no hierarchy, which is exactly the list `/implement` shows the user when called with no argument; picking the spec from it makes the implementer redo every ticket at once. A board works the same way: nobody picks up an epic, they pick up a story from it. Passing the spec explicitly (`/implement 41`) still works and means "work the frontier".
 
+**Single trigger for automations.** `ready-for-agent` on a ticket that has a parent spec does not start a session of its own: the automation resolves the parent and runs `/implement <parent>` once, and `implement` works the frontier. That is why the tickets carry the label (they are what `/implement` lists) while the spec never does after slicing.
+
 Apart from that label, do NOT close or modify the parent issue. From here on the spec's label is a mirror that `implement` moves (`in-progress` when the first ticket starts, `in-review` when the PR opens).
 
 <local-ticket-template>

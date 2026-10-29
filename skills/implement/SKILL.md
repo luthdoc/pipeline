@@ -55,6 +55,8 @@ Sem tracker não existe issue, label nem `## Blocked by`. Pule todo passo de tra
 
 **Você não quebra SPEC em tickets.** Isso é decisão do `to-tickets`, que analisa se o escopo cabe numa janela de contexto e fatia se não couber. Se a SPEC chegou sem tickets, é porque cabe — trate a própria SPEC como a unidade e rode o loop uma vez.
 
+**Disparo por rótulo (automação).** O rótulo `ready-for-agent` num ticket que tem SPEC pai não dispara uma sessão própria. A automação resolve o pai ("Ver pai") e roda `/implement <pai>` uma única vez: a SPEC já trabalha a fronteira, ticket a ticket, numa branch só. Uma sessão por ticket abriria branches e PRs concorrentes para a mesma SPEC. `ready-for-agent` em issue sem pai dispara `/implement <issue>` direto.
+
 ---
 
 ## Pré-requisitos

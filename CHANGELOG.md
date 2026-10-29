@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0 — 2026-10-29
+
+- **Automação por rótulos de issue.** O pipeline passa a ter o vocabulário e as saídas que uma automação precisa para reagir a rótulos: `needs-triage` → `grill-with-issues`; `needs-spec` → `to-spec` / `to-tickets`; `ready-for-agent` → `implement`. A automação em si não faz parte do pipeline.
+- **Skill nova `grill-with-issues`.** É a `grill-me` trabalhando sobre uma issue: recebe número ou URL, lê a issue, os comentários e o código relevante, e entrevista em lote, com recomendação em cada pergunta, sem perguntar o que o código responde. Só age depois da confirmação do entendimento compartilhado. Ao fim reescreve o corpo da issue no formato de ticket do `implement` (What to build + Acceptance criteria, por `--body-file`) e decide pelo mesmo critério de janela de contexto do `to-spec`/`to-tickets`: cabe → tira `needs-triage` e aplica `ready-for-agent`; não cabe → tira `needs-triage`, aplica `needs-spec` e deixa o resumo da conversa num comentário para o `to-spec`. A `grill-me` não muda.
+- **Label `needs-spec` no `setup-project`.** Entra na tabela do vocabulário e no `gh label create --force`, com a descrição "Precisa de SPEC antes de implementar".
+- **`to-spec` com issue.** Sem argumento, funciona como antes. Com número ou URL de issue (ex: `needs-spec`), usa a issue, os comentários e a conversa como fonte e publica a SPEC na própria issue, pelo `--body-file`, mantendo o número, que vai na primeira linha do `spec.md`. Tira `needs-spec`. SPEC que cabe numa unidade recebe `ready-for-agent`; a que não cabe não recebe, e o `to-tickets` roda na mesma sessão.
+- **Disparo único.** `implement` e `to-tickets` documentam a regra para automações: `ready-for-agent` em ticket com SPEC pai não dispara sessão própria; a automação resolve o pai e roda `/implement <pai>` uma vez.
+
 ## 0.6.0 — 2026-10-28
 
 - **Template de PR e CI nascem no `setup-project`.** A Parte 7 grava `.github/pull_request_template.md` (Como foi testado, Risco, Como desfazer) e `.github/workflows/ci.yml`, que em todo PR roda os gates de `## Commands` — exceto `clean` — e, em projeto Node, `npm audit --audit-level=high`. `moderate` não falha o job: aviso transitivo sem correção deixaria todo PR vermelho. Arquivo que já existe não é reescrito; o setup avisa o que falta. Repo sem manifesto ganha o workflow com o bloco `# pipeline:commands` vazio, e o `implementer` preenche o bloco no commit que cria o manifesto, do mesmo jeito que já preenche `## Commands`. O revisor cobra os dois (CL6). Até aqui `review-rules.md` citava `.github/workflows/ci.yml` e ninguém criava o arquivo.
