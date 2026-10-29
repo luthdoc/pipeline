@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.0 — 2026-10-29
+
+- **Etapa de protótipo nas issues visuais.** Entre o grill e a implementação, a issue que mexe no que o usuário vê passa por um protótipo das telas. O protótipo é um artifact do claude.ai, um só por projeto, alterado direto pela sessão; não vira rota no código.
+- **Label `needs-prototype` no `setup-project`.** Entra na tabela do vocabulário e no `gh label create --force`, com a descrição "Precisa de protótipo das telas antes de seguir". O setup grava `docs/agents/prototype.md` com o nome e o link do artifact; sem artifact ainda, o campo fica vazio, com a nota de preencher antes da primeira issue visual.
+- **`grill-with-issues` olha o visível antes do tamanho.** Issue que altera tela, layout, texto de interface ou fluxo de navegação troca `needs-triage` por `needs-prototype` numa operação só, e a decisão de tamanho fica para o `close-prototype`. A skill decide, sem perguntar. Issue sem mudança visível segue como antes.
+- **Sessão do protótipo.** Com `needs-prototype`, uma sessão lê a issue e `docs/agents/prototype.md`, altera o artifact com as decisões da issue e fica aberta para o usuário ajustar conversando. Sem link no arquivo, para e avisa. Documentado no README e no `issue-tracker.md` gerado pelo setup.
+- **Skill nova `close-prototype`.** Roda na mesma sessão do protótipo. Junta as decisões da issue com as alterações e decisões tomadas no protótipo, resume em linguagem de produto e só escreve depois da confirmação explícita. Reescreve o corpo da issue no formato de ticket do `implement` (What to build + Acceptance criteria), com a referência ao artifact e à versão aprovada, por `--body-file` em `.scratch/issue-<N>/body.md`. Roteia pelo mesmo critério do `grill-with-issues`: tira `needs-prototype` e aplica `ready-for-agent` ou `needs-spec`, numa operação só. Princípio visual novo que vale para outras telas vira sugestão para o `DESIGN.md` do projeto, se existir, e não é aplicado sem OK.
+
 ## 0.7.1 — 2026-10-29
 
 - **`implement`, baseline reaproveita a CI verde da main.** Se a branch da unidade acabou de ser criada da `main` (HEAD igual a `origin/main`, sem commit próprio) e a CI do GitHub para esse commit está concluída com todos os checks verdes, a foto do "antes" é "verde pela CI no commit `<sha>`" e `clean`, `lint`, `typecheck` e `test` não rodam de novo. É seguro porque a CI roda os mesmos gates de `## Commands` no mesmo código, num ambiente limpo. Branch retomada ou com commits, CI vermelha, pendente ou ausente, sem tracker GitHub, ou estado que não dá para confirmar: roda como antes.

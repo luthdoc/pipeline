@@ -19,6 +19,7 @@ O output são os arquivos abaixo. Os três primeiros são o contrato que o resto
 
 - **arquivo de instruções** — três seções curtas: `## Issue Tracker`, `## Commands`, `## Fluxo`
 - **`docs/agents/issue-tracker.md`** — o detalhe pesado (comandos do tracker, tabela de labels)
+- **`docs/agents/prototype.md`** — o artifact de protótipo das telas que as issues `needs-prototype` alteram (Parte 1, passo 7)
 - **`docs/agents/architecture.md`** — o mapa do código que `to-spec`, `to-tickets`, `implementer` e revisor leem (Parte 5)
 - **`docs/agents/review-rules-projeto.md`** — critérios deste projeto e os caminhos extras de risco (Parte 6). Sempre criado.
 - **`.github/pull_request_template.md`** — as seções Como foi testado, Risco e Como desfazer (Parte 7)
@@ -200,8 +201,11 @@ Vocabulário padrão sugerido — apresente ao usuário para confirmação ou aj
 | `ready-for-human` | Bloqueada — aguardando decisão ou ação humana |
 | `needs-triage` | Ainda não avaliada por um maintainer |
 | `needs-spec` | Precisa de SPEC antes de implementar |
+| `needs-prototype` | Precisa de protótipo das telas antes de seguir |
 | `in-progress` | Agente no loop — implementando ou em review |
 | `in-review` | Aprovada pelo revisor, aguardando merge (só SPEC ou issue sem tickets) |
+
+`needs-prototype` é o rótulo que o `grill-with-issues` aplica quando a issue altera algo que o usuário vê. Uma sessão lê a issue e `docs/agents/prototype.md`, altera o artifact indicado com as decisões da issue e fica aberta para o usuário ajustar o protótipo conversando nela. Se `docs/agents/prototype.md` estiver sem link, a sessão para e avisa. Na mesma sessão, o `/close-prototype` reescreve a issue como ticket e troca `needs-prototype` por `ready-for-agent` ou `needs-spec`.
 
 `ready-for-agent` é obrigatória — é a label que `to-spec` e `to-tickets` aplicam ao publicar, e é por ela que o `implement` encontra trabalho. As demais podem ser removidas, renomeadas, ou o usuário pode adicionar outras (ex: `wontfix` para issues rejeitadas, `needs-info` para issues que precisam de mais contexto antes de triar).
 
@@ -223,6 +227,7 @@ gh label create "ready-for-agent" --color "0E8A16" --description "Pronta para ag
 gh label create "ready-for-human" --color "D93F0B" --description "Bloqueada, aguardando ação humana" --force
 gh label create "needs-triage" --color "FBCA04" --description "Ainda não avaliada por um maintainer" --force
 gh label create "needs-spec" --color "C5DEF5" --description "Precisa de SPEC antes de implementar" --force
+gh label create "needs-prototype" --color "D4C5F9" --description "Precisa de protótipo das telas antes de seguir" --force
 gh label create "in-progress" --color "1D76DB" --description "Agente no loop: implementação e review" --force
 gh label create "in-review" --color "5319E7" --description "Aprovada, aguardando merge (SPEC ou issue sem tickets)" --force
 ```
@@ -264,6 +269,8 @@ Bloqueio entre tickets: seção `## Blocked by` do corpo — fonte única, sem r
 |---|---|
 | ready-for-agent | ... |
 | ... | ... |
+
+`needs-prototype`: uma sessão lê a issue e `docs/agents/prototype.md`, altera o artifact indicado com as decisões da issue e fica aberta para o usuário ajustar o protótipo conversando nela. Sem link em `docs/agents/prototype.md`, a sessão para e avisa. O `/close-prototype`, na mesma sessão, fecha a etapa.
 ```
 
 **Arquivo de instruções** — bloco resumido:
@@ -277,6 +284,21 @@ Tracker: [github-issues | markdown-local | linear | jira | outro]. Ver `docs/age
 Se a seção `## Issue Tracker` já existir no arquivo de instruções, **atualize o bloco in-place** — não duplique, não toque nas seções vizinhas do arquivo.
 
 Esses dois arquivos juntos são o contrato que `to-spec`, `to-tickets` e o `implement` leem para saber onde e como publicar — mesmo espírito que `## Commands` cumpre para o `implementer`, mas com o detalhe pesado isolado fora do arquivo de instruções. Sem eles, essas skills devem parar com erro.
+
+### 7. Registrar o protótipo das telas
+
+O protótipo do projeto é um artifact do claude.ai, um só por projeto, com as telas. A sessão de uma issue `needs-prototype` o altera direto, e o `/close-prototype` o cita no ticket. Pergunte ao usuário se o projeto já tem esse artifact e, se tiver, o nome e o link. Grave `docs/agents/prototype.md`:
+
+```markdown
+# Protótipo
+
+Artifact do claude.ai com as telas do projeto, um só por projeto. A sessão de uma issue `needs-prototype` altera este artifact; o `/close-prototype` o cita no ticket.
+
+Nome: [nome do artifact]
+Link: [link do claude.ai]
+```
+
+Sem artifact ainda: grave o arquivo com `Nome:` e `Link:` vazios e a nota `Preencha antes da primeira issue visual: sem link, a sessão de needs-prototype para e avisa.` Se o arquivo já existe com link, não reescreva.
 
 ## Parte 2 — `## Commands`
 
@@ -582,6 +604,7 @@ Ao finalizar, informe:
 > ✅ Projeto configurado.
 >
 > **Tracker:** [tracker] — labels criadas: [lista]. Detalhe em `docs/agents/issue-tracker.md`.
+> **Protótipo:** `docs/agents/prototype.md` [com link | sem link — preencher antes da primeira issue visual | já existia].
 > **Commands:** [lint [Ns] · typecheck [Ns] · test [Ns] · build [Ns] · clean [Ns | não declarado] | sem labels — repo sem manifesto; a unidade que criar o manifesto os declara]
 > **Fluxo:** gravado no arquivo de instruções.
 > **Remote:** [URL].
