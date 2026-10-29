@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1 — 2026-10-29
+
+- **`implement`, baseline reaproveita a CI verde da main.** Se a branch da unidade acabou de ser criada da `main` (HEAD igual a `origin/main`, sem commit próprio) e a CI do GitHub para esse commit está concluída com todos os checks verdes, a foto do "antes" é "verde pela CI no commit `<sha>`" e `clean`, `lint`, `typecheck` e `test` não rodam de novo. É seguro porque a CI roda os mesmos gates de `## Commands` no mesmo código, num ambiente limpo. Branch retomada ou com commits, CI vermelha, pendente ou ausente, sem tracker GitHub, ou estado que não dá para confirmar: roda como antes.
+
 ## 0.7.0 — 2026-10-29
 
 - **Automação por rótulos de issue.** O pipeline passa a ter o vocabulário e as saídas que uma automação precisa para reagir a rótulos: `needs-triage` → `grill-with-issues`; `needs-spec` → `to-spec` / `to-tickets`; `ready-for-agent` → `implement`. A automação em si não faz parte do pipeline.

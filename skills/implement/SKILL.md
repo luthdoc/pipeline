@@ -126,6 +126,8 @@ Recriar da `main` faz o trabalho dos tickets irmãos sumir do diff, e o `impleme
 
 Depois do checkout e **antes de abrir qualquer worker**:
 
+**Atalho — CI verde da main.** Vale só se as duas condições forem confirmadas: (a) a branch da unidade acabou de ser criada da `main` — `git rev-parse HEAD` igual a `git rev-parse origin/main`, sem commit próprio; (b) a CI do GitHub para esse commit está concluída e todos os checks terminaram com sucesso (`gh api repos/{owner}/{repo}/commits/<sha>/check-runs` ou `gh run list --commit <sha>`; um check pendente, ausente, cancelado ou falho derruba o atalho). Vale → a foto do "antes" é "verde pela CI no commit `<sha>`", e os passos 1 e 2 **não rodam** (`clean` incluído). É seguro porque a CI roda os mesmos gates de `## Commands` sobre o mesmo código, num ambiente limpo. Qualquer outro caso roda como abaixo: branch retomada ou com commits, CI vermelha, pendente ou ausente, sem tracker GitHub, ou se não for possível confirmar.
+
 1. Se `## Commands` declarar o label `clean`, rode-o. Ele existe para o caso mecânico: artefato de build deixado por outra branch, que faz um gate ficar vermelho sem nenhum arquivo-fonte estar errado. Projeto sem `clean` pula este passo — nada quebra.
 
 2. Rode os labels `lint`, `typecheck` e `test` **uma vez** e guarde o resultado. É a **foto do "antes"**: o estado do projeto antes de qualquer alteração.
