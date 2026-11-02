@@ -4,21 +4,21 @@ description: Close the prototype step opened by /prototype. Initial prototype (d
 disable-model-invocation: true
 ---
 
-## Momento
+## Moment
 
-Rode na mesma sessão do `/prototype`. O momento é o mesmo que ele detectou: rode `git fetch origin` e leia `docs/agents/prototype.md` da `origin/main`.
+Run this in the same session as `/prototype`. The moment is the one it detected: run `git fetch origin` and read `docs/agents/prototype.md` from `origin/main`.
 
-- **Protótipo inicial** (arquivo sem link): não há issue. Siga só "Protótipo inicial", logo abaixo, e pare ali.
-- **Alteração** (arquivo com link, issue `needs-prototype`): pule para "Alteração". Dali em diante, o processo é o de sempre.
+- **Initial prototype** (file without a link): there is no issue. Follow only "Initial prototype", right below, and stop there.
+- **Change** (file with a link, `needs-prototype` issue): skip to "Change". From there on, the process is the usual one.
 
-### Protótipo inicial
+### Initial prototype
 
-1. Confirme com o usuário que o protótipo está aprovado e qual é o artifact (nome e link). Sem aprovação explícita, não grave nada.
-2. Grave `Nome:` e `Link:` em `docs/agents/prototype.md`, numa cópia atualizada da `origin/main`. Não mexa no resto do arquivo.
-3. Siga a regra de escopo pequeno do pipeline: mostre o diff, espere o OK do usuário e só então commite direto na `main` e faça push. Nunca por PR aberto durante os ajustes, e nunca force push. Se o push for rejeitado, rode `git pull --rebase` da `origin/main` e mostre o diff de novo.
-4. Diga ao usuário que o protótipo está registrado e que as próximas mudanças visíveis entram por issue `needs-prototype` (`/prototype <N>`).
+1. Confirm with the user that the prototype is approved and which artifact it is (name and link). Without explicit approval, write nothing.
+2. Write `Nome:` and `Link:` in `docs/agents/prototype.md`, on an up-to-date copy of `origin/main`. Do not touch the rest of the file.
+3. Follow the pipeline's small-scope rule: show the diff, wait for the user's OK, and only then commit directly to `main` and push. Never through a PR opened during the adjustments, and never force push. If the push is rejected, run `git pull --rebase` from `origin/main` and show the diff again.
+4. Tell the user the prototype is recorded and that the next visible changes come in through a `needs-prototype` issue (`/prototype <N>`).
 
-### Alteração
+### Change
 
 Run this in the same session where the project's prototype was adjusted for the issue. The prototype is the project's single claude.ai artifact, recorded in `docs/agents/prototype.md`. What changed on it during this session is half of the source; the issue is the other half.
 

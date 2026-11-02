@@ -1,48 +1,48 @@
 ---
 name: prototype
 description: >
-  Abre a sessão do protótipo das telas e descobre sozinha em qual momento está pelo
-  estado do repo. Protótipo inicial: `docs/agents/prototype.md` sem link — cria o
-  artifact a partir do `docs/prd.md` da `origin/main`. Alteração: já tem link e veio
-  uma issue com needs-prototype — altera o artifact existente com as decisões da issue.
-  Nos dois casos a sessão fica aberta para os ajustes e termina com /close-prototype.
-  Use: /prototype (protótipo inicial) ou /prototype 12 (issue needs-prototype).
+  Open the prototype session for the project's screens and work out which moment it is
+  from the state of the repo. Initial prototype: `docs/agents/prototype.md` has no link —
+  create the artifact from `docs/prd.md` on `origin/main`. Change: there is already a link
+  and an issue labeled needs-prototype came in — change the existing artifact with the
+  issue's decisions. In both cases the session stays open for adjustments and ends with
+  /close-prototype. Use: /prototype (initial prototype) or /prototype 12 (needs-prototype issue).
 disable-model-invocation: true
 ---
 
 # Skill: prototype
 
-O protótipo do projeto é um artifact do claude.ai, um só por projeto, com as telas. Não vira rota no código. Esta skill abre a sessão em que ele é criado ou alterado, e o `/close-prototype`, na mesma sessão, fecha a etapa.
+The project's prototype is a claude.ai artifact, a single one per project, with the screens. It never becomes a route in the code. This skill opens the session where it is created or changed, and `/close-prototype`, in the same session, closes the step.
 
-## 1. Descobrir o momento
+## 1. Find the moment
 
-Rode `git fetch origin` e leia `docs/agents/prototype.md` da `origin/main` (`git show origin/main:docs/agents/prototype.md`), não da branch local, que pode estar velha.
+Run `git fetch origin` and read `docs/agents/prototype.md` from `origin/main` (`git show origin/main:docs/agents/prototype.md`), not from the local branch, which may be stale.
 
-- **Sem link** (ou sem o arquivo) → **protótipo inicial**. Se veio uma issue no argumento, avise que ela fica para depois: primeiro o projeto precisa do protótipo inicial.
-- **Com link e uma issue `needs-prototype`** no argumento → **alteração**.
-- **Com link e sem issue** → pergunte qual issue `needs-prototype`. Não crie um segundo artifact.
+- **No link** (or no file) → **initial prototype**. If an issue came as the argument, say it has to wait: the project needs its initial prototype first.
+- **Link and a `needs-prototype` issue** as the argument → **change**.
+- **Link and no issue** → ask which `needs-prototype` issue. Do not create a second artifact.
 
-Diga ao usuário em uma linha qual momento detectou.
+Tell the user in one line which moment you detected.
 
-## 2. Protótipo inicial
+## 2. Initial prototype
 
-1. Leia `docs/prd.md` da `origin/main` (`git show origin/main:docs/prd.md`). Se não existir, pare e avise: o protótipo inicial nasce do PRD, e o passo anterior é o `/to-prd`.
-2. Procure um documento de design na `origin/main` (`docs/design.md`, ou `DESIGN.md` na raiz).
-   - **Existe** → siga as especificações de design dele.
-   - **Não existe** → wireframe minimalista neutro: tons de cinza, fonte do sistema, hierarquia só por tamanho e peso, imagens como caixa com X. Nada de cores, fontes ou identidade de marca.
-3. Com ou sem design, o protótipo traz os fluxos da jornada do usuário e as especificações do PRD.
-4. Crie o artifact sempre do tipo **Design** (`/design`), um só por projeto: pranchetas de celular (390×844) e desktop (1280×800), ligadas por links, com Play navegável.
-5. Não invente dados reais (contato, endereço, preço, nomes de pessoas). Conteúdo de exemplo vai marcado como exemplo.
-6. Passe ao usuário o nome e o link do artifact e fique aberta para os ajustes.
+1. Read `docs/prd.md` from `origin/main` (`git show origin/main:docs/prd.md`). If it does not exist, stop and tell the user: the initial prototype comes from the PRD, and the previous step is `/to-prd`.
+2. Look for a design doc on `origin/main` (`docs/design.md`, or `DESIGN.md` at the root).
+   - **It exists** → follow its design specifications.
+   - **It does not exist** → a minimalist, neutral wireframe: shades of gray, system font, hierarchy by size and weight only, images as a box with an X. No colors, fonts or brand identity.
+3. With or without a design doc, the prototype carries the user journey flows and the PRD's specifications.
+4. Always create the artifact as a **Design** type (`/design`), a single one per project: mobile (390×844) and desktop (1280×800) artboards, linked to each other, with a navigable Play.
+5. Do not invent real data (contact, address, price, people's names). Sample content is marked as a sample.
+6. Give the user the artifact's name and link and stay open for adjustments.
 
-**Não mexa no repo durante os ajustes:** nenhum commit, branch ou PR. O nome e o link só entram em `docs/agents/prototype.md` pelo `/close-prototype`, depois da aprovação.
+**Do not touch the repo during the adjustments:** no commit, branch or PR. The name and link only go into `docs/agents/prototype.md` through `/close-prototype`, after approval.
 
-## 3. Alteração
+## 3. Change
 
-Leia a issue com o comando "Ver" de `docs/agents/issue-tracker.md` (corpo e todos os comentários). Altere o artifact indicado em `docs/agents/prototype.md` com as decisões da issue, sem criar outro, e fique aberta para os ajustes.
+Read the issue with the "Ver" command from `docs/agents/issue-tracker.md` (body and every comment). Change the artifact named in `docs/agents/prototype.md` with the issue's decisions, without creating another one, and stay open for adjustments.
 
-## Nos dois momentos
+## In both moments
 
-- **Os ajustes vêm pelo chat desta sessão.** Comentário deixado direto no artifact não chega à sessão; se o usuário citar um, peça que mande o pedido aqui.
-- **Nunca force push.** Se a branch da sessão foi apagada no merge, crie uma branch com nome novo a partir da `origin/main` atualizada.
-- Quando o usuário aprovar o protótipo, o próximo passo é `/close-prototype` nesta mesma sessão (`/close-prototype <N>` na alteração).
+- **Adjustments come through this session's chat.** A comment left directly on the artifact does not reach the session; if the user mentions one, ask them to send the request here.
+- **Never force push.** If the session's branch was deleted on merge, create a branch with a new name from an up-to-date `origin/main`.
+- When the user approves the prototype, the next step is `/close-prototype` in this same session (`/close-prototype <N>` for a change).
