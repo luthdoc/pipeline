@@ -43,6 +43,18 @@ needs-triage  →  grill-with-issues  →  needs-prototype  →  sessão do prot
 | `close-prototype` | Na sessão em que o protótipo foi ajustado, junta issue e protótipo, confirma, reescreve a issue como ticket e troca `needs-prototype` por `ready-for-agent` ou `needs-spec`. |
 | `implement` | Loop implementar → revisar → corrigir → re-revisar, com branch e PR. O PR sai com risco, gates e como desfazer. |
 
+## Modelo por etapa
+
+Para controlar o uso de tokens, cada sessão abre com o modelo da etapa. No Claude Code: `claude --cloud --model <id> [--effort medium] "<instrução>"`.
+
+| Etapa | Modelo | Effort |
+|---|---|---|
+| `grill-me` / `grill-with-issues`, `to-prd`, `to-spec`, `to-tickets` | `claude-sonnet-5-5` | padrão |
+| Sessão do protótipo (`needs-prototype`, até o `/close-prototype`) | `claude-opus-5-5` | `medium` |
+| `implement` | `claude-opus-5-5` | padrão |
+
+O modelo vale para a sessão inteira, por isso entra no comando que a abre, e não no frontmatter da skill.
+
 ## Protótipo nas issues visuais
 
 Issue com `needs-prototype`: uma sessão lê a issue e `docs/agents/prototype.md`, altera o artifact do claude.ai indicado ali com as decisões da issue e fica aberta para o usuário ajustar o protótipo conversando nela. Se `docs/agents/prototype.md` estiver sem link, a sessão para e avisa. Ao fim, `/close-prototype` na mesma sessão. O protótipo é um artifact só por projeto, com as telas; não vira rota no código.
