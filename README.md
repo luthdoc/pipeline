@@ -45,7 +45,7 @@ needs-triage  →  grill-with-issues  →  needs-prototype  →  sessão do prot
 
 ## Modelo por etapa
 
-Para controlar o uso de tokens, cada sessão abre com o modelo da etapa. No Claude Code: `claude --cloud --model <id> [--effort medium] "<instrução>"`.
+Para controlar o uso de tokens, cada sessão abre com o modelo da etapa. No Claude Code: `claude --model <id> [--effort medium] --cloud "<instrução>"`. A instrução vem logo depois de `--cloud`; senão dá "Error: --cloud requires a description".
 
 | Etapa | Modelo | Effort |
 |---|---|---|

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.2 — 2026-11-02
+
+- **Ordem do comando de abertura da sessão.** O README passa a mostrar `claude --model <id> [--effort medium] --cloud "<instrução>"`. A instrução tem que vir logo depois de `--cloud`; na ordem da 0.8.1, o Claude Code falha com "Error: --cloud requires a description".
+
 ## 0.8.1 — 2026-11-02
 
 - **Modelo por etapa, para controlar o uso de tokens.** Grill (`grill-me` / `grill-with-issues`), `to-prd`, `to-spec` e `to-tickets` rodam com `claude-sonnet-5-5`; a sessão do protótipo (`needs-prototype` até o `/close-prototype`), com `claude-opus-5-5` e effort `medium`; o `implement`, com `claude-opus-5-5`. A sessão abre com `claude --cloud --model <id> [--effort medium] "<instrução>"`. Seção "Modelo por etapa" no README e uma linha no `docs/agents/issue-tracker.md` gerado pelo `setup-project`, para o projeto herdar a regra. As skills não ganham `model:` no frontmatter: no Claude Code ele só vale até o fim do turno, e as etapas de entrevista têm vários turnos.
