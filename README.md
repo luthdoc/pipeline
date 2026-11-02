@@ -55,6 +55,10 @@ Para controlar o uso de tokens, cada sessão abre com o modelo da etapa. No Clau
 
 O modelo vale para a sessão inteira, por isso entra no comando que a abre, e não no frontmatter da skill.
 
+## Escopo pequeno: commit direto na main
+
+Mudança só de texto ou documentação (`.md` e comentários), com até uns 30 linhas e sem código, CI, config nem migration, não abre PR. O agente mostra o diff ao usuário, espera o OK e commita direto na `main`. Todo o resto segue por branch e PR.
+
 ## Protótipo nas issues visuais
 
 Issue com `needs-prototype`: uma sessão lê a issue e `docs/agents/prototype.md`, altera o artifact do claude.ai indicado ali com as decisões da issue e fica aberta para o usuário ajustar o protótipo conversando nela. Se `docs/agents/prototype.md` estiver sem link, a sessão para e avisa. Ao fim, `/close-prototype` na mesma sessão. O protótipo é um artifact só por projeto, com as telas; não vira rota no código.

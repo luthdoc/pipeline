@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.0 — 2026-11-02
+
+- **Escopo pequeno vai direto na `main`.** Mudança só de texto ou documentação (`.md` e comentários), com até uns 30 linhas e sem código, CI, config nem migration, não abre PR: o agente mostra o diff, espera o OK do usuário e commita na `main`. Seção nova no README.
+
 ## 0.8.2 — 2026-11-02
 
 - **Ordem do comando de abertura da sessão.** O README passa a mostrar `claude --model <id> [--effort medium] --cloud "<instrução>"`. A instrução tem que vir logo depois de `--cloud`; na ordem da 0.8.1, o Claude Code falha com "Error: --cloud requires a description".
