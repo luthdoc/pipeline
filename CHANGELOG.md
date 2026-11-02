@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.10.0 — 2026-11-02
+
+- **Protótipo em dois momentos, com o mesmo comando.** Skill nova `prototype`: `/prototype` abre a sessão do protótipo e descobre o momento pelo estado do repo, lendo `docs/agents/prototype.md` da `origin/main` depois de um `git fetch`. Sem link, é o **protótipo inicial**; com link e uma issue `needs-prototype`, é a **alteração**, que segue como antes. Até aqui, sem link a sessão parava, e o protótipo inicial não tinha regra nenhuma.
+- **Protótipo inicial.** Nasce do `docs/prd.md` da `origin/main`, e sem PRD a sessão para e avisa. Com `docs/design.md`, segue o design dele; sem, faz um wireframe neutro (tons de cinza, fonte do sistema, hierarquia por tamanho e peso, imagens como caixa com X, sem cores, fontes nem marca), mas com os fluxos da jornada do usuário e as especificações do PRD. O artifact é sempre do tipo Design, um só por projeto, com pranchetas de celular (390×844) e desktop (1280×800) ligadas por links e Play navegável. Não inventa dados reais, e conteúdo de exemplo vai marcado como exemplo. A sessão não mexe no repo durante os ajustes.
+- **Ajustes pelo chat da sessão**, nos dois momentos: comentário deixado no artifact não chega a ela.
+- **`close-prototype` no momento inicial.** Grava `Nome:` e `Link:` em `docs/agents/prototype.md` por commit direto na `main`, pela regra de escopo pequeno: mostra o diff, espera o OK do usuário e só então commita. Nunca por PR aberto durante os ajustes. Na alteração, o comportamento não muda.
+- **Sessões na nuvem: nunca force push.** Se a branch da sessão foi apagada no merge, a sessão cria uma branch com nome novo a partir da `origin/main` atualizada. Seção nova no README.
+- **README e `setup-project`.** A seção de protótipo descreve os dois momentos, o fluxo mostra o protótipo inicial depois do `to-prd`, e a tabela ganha a `prototype`. O passo 7 do setup diz que o artifact é criado no protótipo inicial e é sempre do tipo Design. O `grill-with-issues` aponta o próximo passo como `/prototype <N>`.
+- **Motivo.** O protótipo inicial de um projeto recente teve cinco tropeços: o PRD foi lido de uma branch velha, a sessão inventou identidade visual, criou o tipo errado de artifact, registrou o link por PR antes da aprovação e tentou um force push.
+
 ## 0.9.0 — 2026-11-02
 
 - **Escopo pequeno vai direto na `main`.** Mudança só de texto ou documentação (`.md` e comentários), com até uns 30 linhas e sem código, CI, config nem migration, não abre PR: o agente mostra o diff, espera o OK do usuário e commita na `main`. Seção nova no README.

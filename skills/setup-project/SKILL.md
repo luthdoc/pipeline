@@ -19,7 +19,7 @@ O output são os arquivos abaixo. Os três primeiros são o contrato que o resto
 
 - **arquivo de instruções** — três seções curtas: `## Issue Tracker`, `## Commands`, `## Fluxo`
 - **`docs/agents/issue-tracker.md`** — o detalhe pesado (comandos do tracker, tabela de labels)
-- **`docs/agents/prototype.md`** — o artifact de protótipo das telas que as issues `needs-prototype` alteram (Parte 1, passo 7)
+- **`docs/agents/prototype.md`** — o artifact de protótipo das telas, criado no protótipo inicial e alterado pelas issues `needs-prototype` (Parte 1, passo 7)
 - **`docs/agents/architecture.md`** — o mapa do código que `to-spec`, `to-tickets`, `implementer` e revisor leem (Parte 5)
 - **`docs/agents/review-rules-projeto.md`** — critérios deste projeto e os caminhos extras de risco (Parte 6). Sempre criado.
 - **`.github/pull_request_template.md`** — as seções Como foi testado, Risco e Como desfazer (Parte 7)
@@ -205,7 +205,7 @@ Vocabulário padrão sugerido — apresente ao usuário para confirmação ou aj
 | `in-progress` | Agente no loop — implementando ou em review |
 | `in-review` | Aprovada pelo revisor, aguardando merge (só SPEC ou issue sem tickets) |
 
-`needs-prototype` é o rótulo que o `grill-with-issues` aplica quando a issue altera algo que o usuário vê. Uma sessão lê a issue e `docs/agents/prototype.md`, altera o artifact indicado com as decisões da issue e fica aberta para o usuário ajustar o protótipo conversando nela. Se `docs/agents/prototype.md` estiver sem link, a sessão para e avisa. Na mesma sessão, o `/close-prototype` reescreve a issue como ticket e troca `needs-prototype` por `ready-for-agent` ou `needs-spec`.
+`needs-prototype` é o rótulo que o `grill-with-issues` aplica quando a issue altera algo que o usuário vê. O `/prototype <N>` lê a issue e `docs/agents/prototype.md`, altera o artifact indicado com as decisões da issue e fica aberto para o usuário ajustar o protótipo conversando na sessão. Se `docs/agents/prototype.md` estiver sem link, o projeto ainda não tem protótipo inicial, e ele vem antes. Na mesma sessão, o `/close-prototype` reescreve a issue como ticket e troca `needs-prototype` por `ready-for-agent` ou `needs-spec`.
 
 `ready-for-agent` é obrigatória — é a label que `to-spec` e `to-tickets` aplicam ao publicar, e é por ela que o `implement` encontra trabalho. As demais podem ser removidas, renomeadas, ou o usuário pode adicionar outras (ex: `wontfix` para issues rejeitadas, `needs-info` para issues que precisam de mais contexto antes de triar).
 
@@ -270,7 +270,7 @@ Bloqueio entre tickets: seção `## Blocked by` do corpo — fonte única, sem r
 | ready-for-agent | ... |
 | ... | ... |
 
-`needs-prototype`: uma sessão lê a issue e `docs/agents/prototype.md`, altera o artifact indicado com as decisões da issue e fica aberta para o usuário ajustar o protótipo conversando nela. Sem link em `docs/agents/prototype.md`, a sessão para e avisa. O `/close-prototype`, na mesma sessão, fecha a etapa.
+`needs-prototype`: o `/prototype <N>` lê a issue e `docs/agents/prototype.md`, altera o artifact indicado com as decisões da issue e fica aberto para o usuário ajustar o protótipo pelo chat da sessão. Sem link em `docs/agents/prototype.md`, o `/prototype` cria antes o protótipo inicial a partir do `docs/prd.md`. O `/close-prototype`, na mesma sessão, fecha a etapa.
 
 Modelo por sessão: grill, `/to-prd`, `/to-spec` e `/to-tickets` com `claude-sonnet-5-5`; protótipo com `claude-opus-5-5` e `--effort medium`; `/implement` com `claude-opus-5-5`.
 ```
@@ -289,18 +289,18 @@ Esses dois arquivos juntos são o contrato que `to-spec`, `to-tickets` e o `impl
 
 ### 7. Registrar o protótipo das telas
 
-O protótipo do projeto é um artifact do claude.ai, um só por projeto, com as telas. A sessão de uma issue `needs-prototype` o altera direto, e o `/close-prototype` o cita no ticket. Pergunte ao usuário se o projeto já tem esse artifact e, se tiver, o nome e o link. Grave `docs/agents/prototype.md`:
+O protótipo do projeto é um artifact do claude.ai, um só por projeto, com as telas, sempre do tipo Design. Ele é criado na sessão de protótipo inicial (`/prototype`, ver a seção "Protótipo" do README do pipeline), a partir do `docs/prd.md`. A sessão de uma issue `needs-prototype` o altera direto, e o `/close-prototype` o cita no ticket. Pergunte ao usuário se o projeto já tem esse artifact e, se tiver, o nome e o link. Grave `docs/agents/prototype.md`:
 
 ```markdown
 # Protótipo
 
-Artifact do claude.ai com as telas do projeto, um só por projeto. A sessão de uma issue `needs-prototype` altera este artifact; o `/close-prototype` o cita no ticket.
+Artifact do claude.ai com as telas do projeto, um só por projeto, do tipo Design. Criado no protótipo inicial; a sessão de uma issue `needs-prototype` altera este artifact; o `/close-prototype` o cita no ticket.
 
 Nome: [nome do artifact]
 Link: [link do claude.ai]
 ```
 
-Sem artifact ainda: grave o arquivo com `Nome:` e `Link:` vazios e a nota `Preencha antes da primeira issue visual: sem link, a sessão de needs-prototype para e avisa.` Se o arquivo já existe com link, não reescreva.
+Sem artifact ainda: grave o arquivo com `Nome:` e `Link:` vazios e a nota `Sem link: o /prototype cria o protótipo inicial a partir do docs/prd.md, e o /close-prototype preenche este arquivo depois da aprovação.` Se o arquivo já existe com link, não reescreva.
 
 ## Parte 2 — `## Commands`
 
@@ -606,7 +606,7 @@ Ao finalizar, informe:
 > ✅ Projeto configurado.
 >
 > **Tracker:** [tracker] — labels criadas: [lista]. Detalhe em `docs/agents/issue-tracker.md`.
-> **Protótipo:** `docs/agents/prototype.md` [com link | sem link — preencher antes da primeira issue visual | já existia].
+> **Protótipo:** `docs/agents/prototype.md` [com link | sem link — criado no protótipo inicial (`/prototype`) | já existia].
 > **Commands:** [lint [Ns] · typecheck [Ns] · test [Ns] · build [Ns] · clean [Ns | não declarado] | sem labels — repo sem manifesto; a unidade que criar o manifesto os declara]
 > **Fluxo:** gravado no arquivo de instruções.
 > **Remote:** [URL].

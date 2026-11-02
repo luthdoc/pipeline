@@ -1,8 +1,24 @@
 ---
 name: close-prototype
-description: Close the prototype step of an issue labeled needs-prototype — in the same session where the prototype was adjusted, merge the issue's decisions with the decisions taken on the prototype, confirm them, rewrite the issue as an implementable ticket that points to the approved prototype, and route it — ready-for-agent when it fits one /implement session, needs-spec when it doesn't.
+description: Close the prototype step opened by /prototype. Initial prototype (docs/agents/prototype.md without a link) — record the approved artifact's name and link in docs/agents/prototype.md by a direct commit to main, after the user OKs the diff. Change (an issue labeled needs-prototype) — in the same session where the prototype was adjusted, merge the issue's decisions with the decisions taken on the prototype, confirm them, rewrite the issue as an implementable ticket that points to the approved prototype, and route it — ready-for-agent when it fits one /implement session, needs-spec when it doesn't.
 disable-model-invocation: true
 ---
+
+## Moment
+
+Run this in the same session as `/prototype`. The moment is the one it detected: run `git fetch origin` and read `docs/agents/prototype.md` from `origin/main`.
+
+- **Initial prototype** (file without a link): there is no issue. Follow only "Initial prototype", right below, and stop there.
+- **Change** (file with a link, `needs-prototype` issue): skip to "Change". From there on, the process is the usual one.
+
+### Initial prototype
+
+1. Confirm with the user that the prototype is approved and which artifact it is (name and link). Without explicit approval, write nothing.
+2. Write `Nome:` and `Link:` in `docs/agents/prototype.md`, on an up-to-date copy of `origin/main`. Do not touch the rest of the file.
+3. Follow the pipeline's small-scope rule: show the diff, wait for the user's OK, and only then commit directly to `main` and push. Never through a PR opened during the adjustments, and never force push. If the push is rejected, run `git pull --rebase` from `origin/main` and show the diff again.
+4. Tell the user the prototype is recorded and that the next visible changes come in through a `needs-prototype` issue (`/prototype <N>`).
+
+### Change
 
 Run this in the same session where the project's prototype was adjusted for the issue. The prototype is the project's single claude.ai artifact, recorded in `docs/agents/prototype.md`. What changed on it during this session is half of the source; the issue is the other half.
 
@@ -64,4 +80,4 @@ The label edit is the tracker's "Editar labels" command; the comment is `gh issu
 
 ### 6. Visual principles
 
-If the session settled a visual principle that applies to other screens too — not just this one — and the project has a `DESIGN.md`, suggest recording it there, with the exact text. Do not apply it without the user's OK.
+If the session settled a visual principle that applies to other screens too — not just this one — and the project has a design doc (`docs/design.md` or `DESIGN.md`), suggest recording it there, with the exact text. Do not apply it without the user's OK.
