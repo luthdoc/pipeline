@@ -271,6 +271,8 @@ Bloqueio entre tickets: seção `## Blocked by` do corpo — fonte única, sem r
 | ... | ... |
 
 `needs-prototype`: uma sessão lê a issue e `docs/agents/prototype.md`, altera o artifact indicado com as decisões da issue e fica aberta para o usuário ajustar o protótipo conversando nela. Sem link em `docs/agents/prototype.md`, a sessão para e avisa. O `/close-prototype`, na mesma sessão, fecha a etapa.
+
+Modelo por sessão: grill, `/to-prd`, `/to-spec` e `/to-tickets` com `claude-sonnet-5-5`; protótipo com `claude-opus-5-5` e `--effort medium`; `/implement` com `claude-opus-5-5`.
 ```
 
 **Arquivo de instruções** — bloco resumido:

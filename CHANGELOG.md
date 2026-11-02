@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1 — 2026-11-02
+
+- **Modelo por etapa, para controlar o uso de tokens.** Grill (`grill-me` / `grill-with-issues`), `to-prd`, `to-spec` e `to-tickets` rodam com `claude-sonnet-5-5`; a sessão do protótipo (`needs-prototype` até o `/close-prototype`), com `claude-opus-5-5` e effort `medium`; o `implement`, com `claude-opus-5-5`. A sessão abre com `claude --cloud --model <id> [--effort medium] "<instrução>"`. Seção "Modelo por etapa" no README e uma linha no `docs/agents/issue-tracker.md` gerado pelo `setup-project`, para o projeto herdar a regra. As skills não ganham `model:` no frontmatter: no Claude Code ele só vale até o fim do turno, e as etapas de entrevista têm vários turnos.
+
 ## 0.8.0 — 2026-10-29
 
 - **Etapa de protótipo nas issues visuais.** Entre o grill e a implementação, a issue que mexe no que o usuário vê passa por um protótipo das telas. O protótipo é um artifact do claude.ai, um só por projeto, alterado direto pela sessão; não vira rota no código.
