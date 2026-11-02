@@ -1,8 +1,24 @@
 ---
 name: close-prototype
-description: Close the prototype step of an issue labeled needs-prototype — in the same session where the prototype was adjusted, merge the issue's decisions with the decisions taken on the prototype, confirm them, rewrite the issue as an implementable ticket that points to the approved prototype, and route it — ready-for-agent when it fits one /implement session, needs-spec when it doesn't.
+description: Close the prototype step opened by /prototype. Initial prototype (docs/agents/prototype.md without a link) — record the approved artifact's name and link in docs/agents/prototype.md by a direct commit to main, after the user OKs the diff. Change (an issue labeled needs-prototype) — in the same session where the prototype was adjusted, merge the issue's decisions with the decisions taken on the prototype, confirm them, rewrite the issue as an implementable ticket that points to the approved prototype, and route it — ready-for-agent when it fits one /implement session, needs-spec when it doesn't.
 disable-model-invocation: true
 ---
+
+## Momento
+
+Rode na mesma sessão do `/prototype`. O momento é o mesmo que ele detectou: rode `git fetch origin` e leia `docs/agents/prototype.md` da `origin/main`.
+
+- **Protótipo inicial** (arquivo sem link): não há issue. Siga só "Protótipo inicial", logo abaixo, e pare ali.
+- **Alteração** (arquivo com link, issue `needs-prototype`): pule para "Alteração". Dali em diante, o processo é o de sempre.
+
+### Protótipo inicial
+
+1. Confirme com o usuário que o protótipo está aprovado e qual é o artifact (nome e link). Sem aprovação explícita, não grave nada.
+2. Grave `Nome:` e `Link:` em `docs/agents/prototype.md`, numa cópia atualizada da `origin/main`. Não mexa no resto do arquivo.
+3. Siga a regra de escopo pequeno do pipeline: mostre o diff, espere o OK do usuário e só então commite direto na `main` e faça push. Nunca por PR aberto durante os ajustes, e nunca force push. Se o push for rejeitado, rode `git pull --rebase` da `origin/main` e mostre o diff de novo.
+4. Diga ao usuário que o protótipo está registrado e que as próximas mudanças visíveis entram por issue `needs-prototype` (`/prototype <N>`).
+
+### Alteração
 
 Run this in the same session where the project's prototype was adjusted for the issue. The prototype is the project's single claude.ai artifact, recorded in `docs/agents/prototype.md`. What changed on it during this session is half of the source; the issue is the other half.
 
@@ -64,4 +80,4 @@ The label edit is the tracker's "Editar labels" command; the comment is `gh issu
 
 ### 6. Visual principles
 
-If the session settled a visual principle that applies to other screens too — not just this one — and the project has a `DESIGN.md`, suggest recording it there, with the exact text. Do not apply it without the user's OK.
+If the session settled a visual principle that applies to other screens too — not just this one — and the project has a design doc (`docs/design.md` or `DESIGN.md`), suggest recording it there, with the exact text. Do not apply it without the user's OK.

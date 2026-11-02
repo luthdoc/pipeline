@@ -56,7 +56,7 @@ Add `## Spec` (`#N` of the parent) and `## Blocked by` only when the issue alrea
 
 **Visible first.** Before deciding the size, check whether the issue changes anything the user sees: a screen, a layout, interface text, a navigation flow. This is your decision, do not ask.
 
-- **Visible** → `gh issue edit <N> --add-label "needs-prototype" --remove-label "needs-triage"`, in a single operation. Leave the size decision to `close-prototype`, and skip the rest of this step. Tell the user the next step is a session that updates the project's prototype (`docs/agents/prototype.md`), followed by `/close-prototype <N>` in that same session.
+- **Visible** → `gh issue edit <N> --add-label "needs-prototype" --remove-label "needs-triage"`, in a single operation. Leave the size decision to `close-prototype`, and skip the rest of this step. Tell the user the next step is `/prototype <N>`, a session that updates the project's prototype (`docs/agents/prototype.md`), followed by `/close-prototype <N>` in that same session.
 - **Not visible** → route by size, below.
 
 **Size.** Decide whether the work fits one fresh context window, as a single `/implement` session — the same criterion `to-spec` and `to-tickets` use. This is a code decision: decide it yourself, do not ask.
