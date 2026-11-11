@@ -1,6 +1,6 @@
 ---
 name: close-prototype
-description: Close the prototype step opened by /prototype. Initial prototype (docs/agents/prototype.md without a link) — record the approved artifact's name and link in docs/agents/prototype.md by a direct commit to main, after the user OKs the diff. Change (an issue labeled needs-prototype) — in the same session where the prototype was adjusted, merge the issue's decisions with the decisions taken on the prototype, confirm them, rewrite the issue as an implementable ticket that points to the approved prototype, and route it — ready-for-agent when it fits one /implement session, needs-spec when it doesn't.
+description: Close the prototype step opened by /prototype. Initial prototype (docs/agents/prototype.md without a link) — record the approved artifact's name and link in docs/agents/prototype.md and create each screen's decision file in docs/telas/, after the user OKs the diff. Change (an issue labeled needs-prototype) — in the same session where the prototype was adjusted, merge the issue's decisions with the decisions taken on the prototype, confirm them, record them in docs/telas/, rewrite the issue as an implementable ticket that points to the approved prototype and cites the decision IDs, and route it — ready-for-agent when it fits one /implement session, needs-spec when it doesn't.
 disable-model-invocation: true
 ---
 
@@ -15,8 +15,9 @@ Run this in the same session as `/prototype`. The moment is the one it detected:
 
 1. Confirm with the user that the prototype is approved and which artifact it is (name and link). Without explicit approval, write nothing.
 2. Write `Nome:` and `Link:` in `docs/agents/prototype.md`, on an up-to-date copy of `origin/main`. Do not touch the rest of the file.
-3. Follow the pipeline's small-scope rule: show the diff, wait for the user's OK, and only then commit directly to `main` and push. Never through a PR opened during the adjustments, and never force push. If the push is rejected, run `git pull --rebase` from `origin/main` and show the diff again.
-4. Tell the user the prototype is recorded and that the next visible changes come in through a `needs-prototype` issue (`/prototype <N>`).
+3. Create the screens' decision files, following `docs/telas/README.md`: one `docs/telas/<tela>.md` per screen of the approved prototype, with the decisions kept during the session, each one with `Origem: protótipo`, `Estado: vale` and `Aplicada em: protótipo sim · código não`. Add each screen's row to the map in `docs/telas/README.md`, with "Rotas e componentes" empty (the `implementer` fills it). Show the user the list of decisions per screen and apply their corrections before writing. If `docs/telas/README.md` does not exist (project configured before it), create it with the content from the `setup-project` (Parte 1, passo 8).
+4. Show the diff and wait for the user's OK. Within the pipeline's small-scope rule (only `.md`, up to about 30 lines), commit directly to `main` and push. Larger than that, which is the usual case once the screens' files are in, open a branch and a PR now, after approval. Never through a PR opened during the adjustments, and never force push. If the push is rejected, run `git pull --rebase` from `origin/main` and show the diff again.
+5. Tell the user the prototype is recorded and that the next visible changes come in through a `needs-prototype` issue (`/prototype <N>`).
 
 ### Change
 
@@ -40,11 +41,19 @@ The argument is an issue number or URL. If there is none, use the issue this ses
 
 Where the prototype contradicts the issue, the prototype wins: it is the later decision. Say so in the summary.
 
+Also read, from `origin/main`, the decision files of the screens the issue touches (`docs/telas/README.md` names them in its map). Each decision of this session either is new, or supersedes one of them; say which in the summary, citing the ID.
+
 ### 3. Confirm the shared understanding
 
 Summarize the result in plain product language: what the user will see and do, what changed from the original issue, what is out of scope. Ask the user to confirm explicitly. Nothing below happens before that confirmation. If the user corrects the summary, apply the correction and confirm again.
 
-### 4. Rewrite the issue as a ticket
+### 4. Record the screen decisions
+
+On an up-to-date copy of `origin/main`, write the confirmed decisions in the screens' files, following `docs/telas/README.md`: a new ID for each one, `Origem: protótipo — <date> — #<N>`, `Estado: vale`, `Aplicada em: protótipo sim · código não`. A decision that replaces an existing one is not an edit: the old one gets `Estado: substituída por <new ID>`. A screen that is new to the project gets its file and its row in the map, with "Rotas e componentes" empty. If `docs/telas/README.md` does not exist (project configured before it), create it with the content from the `setup-project` (Parte 1, passo 8).
+
+Show the diff and wait for the user's OK. Within the pipeline's small-scope rule (only `.md`, up to about 30 lines), commit directly to `main` and push; larger, open a branch and a PR. Never force push. Note the IDs: the ticket cites them.
+
+### 5. Rewrite the issue as a ticket
 
 Write the new body to `.scratch/issue-<N>/body.md` and apply it with the tracker's edit command from that file (`--body-file` or the tracker's equivalent — never an inline `--body "..."`: markdown carries backticks, quotes, `$` and `!`, which break inline quoting differently in Bash and PowerShell). The body uses the ticket format `implement` expects, the same as `grill-with-issues` and the `<issue-template>` in `to-tickets`, plus the reference to the approved prototype:
 
@@ -63,11 +72,15 @@ The end-to-end behaviour this issue makes work, from the user's perspective — 
 
 [Artifact name](artifact link) — approved version: [version or line the user approved].
 
+## Screen decisions
+
+- `docs/telas/<tela>.md`: PDV-07, PDV-08 (PDV-03 superseded)
+
 </ticket-template>
 
 Add `## Spec` (`#N` of the parent) and `## Blocked by` only when the issue already has a parent spec or blockers. Avoid specific file paths and code snippets — they go stale fast.
 
-### 5. Route by size
+### 6. Route by size
 
 Decide whether the work fits one fresh context window, as a single `/implement` session — the same criterion `grill-with-issues`, `to-spec` and `to-tickets` use. This is a code decision: decide it yourself, do not ask.
 
@@ -78,6 +91,6 @@ Move the labels in a single operation, never add without removing (the vocabular
 
 The label edit is the tracker's "Editar labels" command; the comment is `gh issue comment <N> --body-file <file>` on GitHub, or the tracker's equivalent. Do not close the issue.
 
-### 6. Visual principles
+### 7. Visual principles
 
 If the session settled a visual principle that applies to other screens too — not just this one — and the project has a design doc (`docs/design.md` or `DESIGN.md`), suggest recording it there, with the exact text. Do not apply it without the user's OK.

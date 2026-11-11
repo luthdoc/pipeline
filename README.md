@@ -41,7 +41,7 @@ needs-triage  →  grill-with-issues  →  needs-prototype  →  prototype <N>  
 | `to-tickets` | Fatia uma SPEC em tickets verticais com dependências. |
 | `grill-with-issues` | Entrevista sobre uma issue, reescreve como ticket e roteia: `needs-prototype` se mexe no que o usuário vê; senão `ready-for-agent` ou `needs-spec`. |
 | `prototype` | Abre a sessão do protótipo e descobre o momento pelo repo: sem link em `docs/agents/prototype.md`, cria o protótipo inicial a partir do PRD; com link e uma issue `needs-prototype`, altera o artifact existente. |
-| `close-prototype` | Fecha a sessão do protótipo. No inicial, grava nome e link em `docs/agents/prototype.md` por commit direto na `main`, depois do OK do diff. Na alteração, junta issue e protótipo, confirma, reescreve a issue como ticket e troca `needs-prototype` por `ready-for-agent` ou `needs-spec`. |
+| `close-prototype` | Fecha a sessão do protótipo. No inicial, grava nome e link em `docs/agents/prototype.md` e cria o arquivo de decisões de cada tela em `docs/telas/`. Na alteração, junta issue e protótipo, confirma, grava as decisões em `docs/telas/`, reescreve a issue como ticket citando os IDs e troca `needs-prototype` por `ready-for-agent` ou `needs-spec`. |
 | `implement` | Loop implementar → revisar → corrigir → re-revisar, com branch e PR. O PR sai com risco, gates e como desfazer. |
 
 ## Modelo por etapa
@@ -68,8 +68,17 @@ Mudança só de texto ou documentação (`.md` e comentários), com até uns 30 
 
 O protótipo vem sempre antes do código em produção. É um artifact do claude.ai, um só por projeto, do tipo Design, com as telas; não vira rota no código. O mesmo comando, `/prototype`, serve aos dois momentos, e a skill descobre qual é pelo estado do repo:
 
-- **Protótipo inicial** — `docs/agents/prototype.md` sem link. A sessão lê o `docs/prd.md` da `origin/main` e cria o artifact. Com `docs/design.md`, segue o design dele; sem, faz um wireframe neutro (cinza, fonte do sistema, imagens como caixa com X), mas com os fluxos da jornada e as especificações do PRD. O `/close-prototype` grava nome e link em `docs/agents/prototype.md` por commit direto na `main`, depois do OK do diff, e nunca por PR aberto durante os ajustes.
+- **Protótipo inicial** — `docs/agents/prototype.md` sem link. A sessão lê o `docs/prd.md` da `origin/main` e cria o artifact. Com `docs/design.md`, segue o design dele; sem, faz um wireframe neutro (cinza, fonte do sistema, imagens como caixa com X), mas com os fluxos da jornada e as especificações do PRD. O `/close-prototype` grava nome e link em `docs/agents/prototype.md` e as decisões de cada tela em `docs/telas/`, depois do OK do diff, e nunca por PR aberto durante os ajustes.
 - **Alteração** — já tem link, e a entrada é uma issue `needs-prototype` saída do grill. A sessão altera o artifact existente, e o `/close-prototype <N>` reescreve a issue e a roteia.
+
+### Decisões de tela
+
+O artifact e o código não guardam o porquê de nada, e um não serve para corrigir o outro quando divergem. Por isso cada tela tem um arquivo de decisões em `docs/telas/<tela>.md`, que é a fonte da verdade da tela: o protótipo e o código derivam dele, e quem diverge do arquivo está errado. Tokens e componentes continuam no design doc; regras de negócio, no `docs/prd.md`.
+
+- **Formato** — cada decisão tem ID por tela (`PDV-07`), decisão, por quê, origem, estado (`vale` ou `substituída por`) e onde já está aplicada (protótipo, código). Decisão que muda não é editada: ganha ID novo, e a antiga passa a `substituída por`.
+- **Mapa** — `docs/telas/README.md` lista cada tela com o arquivo, o prefixo de ID e as rotas e componentes que ela cobre. É por ele que o revisor sabe a qual tela um arquivo do diff pertence.
+- **Quem escreve** — o `setup-project` cria o README com o mapa vazio. O `/close-prototype` grava as decisões aprovadas (no inicial, cria o arquivo de cada tela), com "protótipo: sim, código: não". O `implementer` preenche as rotas e componentes no mapa e marca "código: sim" no mesmo commit que aplica a decisão.
+- **Quem lê** — o `/prototype` antes de alterar o artifact, o `implementer` antes de mexer em UI, e o revisor, que cobra pela CL7.
 
 Nos dois momentos, os ajustes vêm pelo chat da sessão: comentário deixado no artifact não chega a ela.
 
@@ -92,6 +101,7 @@ O pipeline é genérico. O que é de cada projeto mora no repo do projeto, gerad
 - `docs/agents/issue-tracker.md` — comandos do tracker e vocabulário de labels.
 - `docs/agents/prototype.md` — nome e link do artifact do claude.ai com as telas do projeto. Gerado pelo `setup-project`; sem link até o `/close-prototype` do protótipo inicial.
 - `docs/agents/architecture.md` — mapa de módulos, seams e invariantes, lido pelos agentes. Gerado pelo `setup-project`, mantido pelo `implementer`.
+- `docs/telas/` — decisões de tela, uma tela por arquivo, e o mapa tela → rotas e componentes em `docs/telas/README.md`. Fonte da verdade da tela, acima do protótipo e do código. O `setup-project` cria o README; o `/close-prototype` grava as decisões; o `implementer` mantém o mapa e marca o que aplicou.
 - `CLAUDE.md` com `@AGENTS.md` — só quando a ferramenta não lê `AGENTS.md` sozinha (ex: Claude Code). Criado pelo `setup-project`.
 - `docs/agents/review-rules-projeto.md` — critérios de review da stack ou do design system, caminhos extras de risco do PR, e achado do revisor que se repetiu. O `setup-project` cria o arquivo em todo projeto. O revisor lê os critérios junto com os universais. A lista padrão de risco (migração, auth, cobrança, CI, deploy) mora na skill `implement` e não se rebaixa daqui.
 - `.github/pull_request_template.md` — as seções em que o dono decide o merge: Como foi testado, Risco, Como desfazer.

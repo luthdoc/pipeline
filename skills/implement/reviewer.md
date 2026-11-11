@@ -42,6 +42,8 @@ Este passo é o que produz o valor da review. Um revisor que lê o diff primeiro
 
 Consulte `docs/agents/architecture.md`, se existir, para saber onde cada coisa mora neste repo — a expectativa de "quais arquivos" depende disso.
 
+Consulte também `docs/telas/README.md`, se existir: o mapa diz a qual tela pertence cada arquivo de UI. Leia o arquivo de decisões de cada tela que o diff toca, ou que o ticket cita em `## Screen decisions` — é a base da CL7.
+
 Se você recebeu o caminho da SPEC, **leia-a agora, antes do diff**, e em especial o campo `## Covers`. É o que transforma "o ticket foi cumprido?" em "o requisito foi entregue?".
 
 ### 2. Ler o diff criticamente
@@ -61,7 +63,7 @@ Leia por inteiro o `review-rules.md` cujo caminho você recebeu no item 1 — in
 |---|---|---|
 | **S** segurança | S1–S4 | nunca — mesmo diff pequeno pode vazar segredo |
 | **T** testes | T1–T5 nos arquivos de teste do diff | nunca |
-| **CL** limpeza | CL1–CL6 nos arquivos tocados | nunca |
+| **CL** limpeza | CL1–CL7 nos arquivos tocados | nunca |
 | **C** complexidade | C1–C6 nas funções que o diff criou ou alterou | nunca |
 | **SM** code smells | SM1–SM10 sobre a estrutura do que o diff criou | nunca — mas leia a disciplina do eixo antes |
 | **+ projeto** | os critérios de `docs/agents/review-rules-projeto.md`, além dos cinco universais | quando o arquivo não existe no repo |
