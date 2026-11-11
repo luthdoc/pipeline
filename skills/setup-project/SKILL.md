@@ -4,8 +4,8 @@ description: >
   Configura um repositório para o pipeline: issue tracker e vocabulário de labels,
   a seção `## Commands` (lint/typecheck/test/build/clean) que o implementer lê como
   gate, a seção `## Fluxo` com as saídas recomendadas depois de um grill, o remote,
-  o template de PR, a CI com esses gates e `npm audit`, os rótulos de risco e o
-  `review-rules-projeto.md`. Rode uma vez por repositório, antes do primeiro uso de
+  o template de PR, a CI com esses gates e `npm audit`, os rótulos de risco, o
+  `review-rules-projeto.md` e a pasta `docs/telas/` das decisões de tela. Rode uma vez por repositório, antes do primeiro uso de
   to-spec, to-tickets ou implement. Use quando o usuário disser "setup do projeto",
   "setup-project", "configura o tracker", "prepara o repo para o pipeline" ou variações.
 disable-model-invocation: true
@@ -20,6 +20,7 @@ O output são os arquivos abaixo. Os três primeiros são o contrato que o resto
 - **arquivo de instruções** — três seções curtas: `## Issue Tracker`, `## Commands`, `## Fluxo`
 - **`docs/agents/issue-tracker.md`** — o detalhe pesado (comandos do tracker, tabela de labels)
 - **`docs/agents/prototype.md`** — o artifact de protótipo das telas, criado no protótipo inicial e alterado pelas issues `needs-prototype` (Parte 1, passo 7)
+- **`docs/telas/README.md`** — a convenção das decisões de tela e o mapa tela → rotas e componentes; os arquivos de cada tela nascem no `/close-prototype` (Parte 1, passo 8)
 - **`docs/agents/architecture.md`** — o mapa do código que `to-spec`, `to-tickets`, `implementer` e revisor leem (Parte 5)
 - **`docs/agents/review-rules-projeto.md`** — critérios deste projeto e os caminhos extras de risco (Parte 6). Sempre criado.
 - **`.github/pull_request_template.md`** — as seções Como foi testado, Risco e Como desfazer (Parte 7)
@@ -301,6 +302,42 @@ Link: [link do claude.ai]
 ```
 
 Sem artifact ainda: grave o arquivo com `Nome:` e `Link:` vazios e a nota `Sem link: o /prototype cria o protótipo inicial a partir do docs/prd.md, e o /close-prototype preenche este arquivo depois da aprovação.` Se o arquivo já existe com link, não reescreva.
+
+### 8. Criar a pasta de decisões de tela
+
+O artifact e o código não guardam o porquê de nenhuma decisão de tela, e quando divergem nenhum dos dois serve para corrigir o outro. A fonte da verdade da tela é um arquivo por tela em `docs/telas/`. Grave `docs/telas/README.md`:
+
+````markdown
+# Telas
+
+Decisões de tela deste projeto, uma tela por arquivo. É a fonte da verdade da tela: o protótipo (`docs/agents/prototype.md`) e o código derivam daqui, e quem diverge deste registro está errado. Tokens e componentes moram no design doc; regras de negócio, no `docs/prd.md`.
+
+## Mapa
+
+| Tela | Arquivo | Prefixo | Rotas e componentes |
+|---|---|---|---|
+
+O `/close-prototype` acrescenta a linha de cada tela nova. O `implementer` preenche "Rotas e componentes" quando cria, move ou renomeia o código da tela. O revisor usa esta coluna para saber a qual tela um arquivo do diff pertence (CL7).
+
+## Formato
+
+Cada decisão é uma seção do arquivo da tela:
+
+```md
+## PDV-07 — Pagamento a prazo: como escolher as parcelas
+Decisão: o que o usuário vê e faz.
+Por quê: o motivo, em uma ou duas frases.
+Origem: protótipo | código | nova — AAAA-MM-DD — #issue ou PR
+Estado: vale | substituída por PDV-12
+Aplicada em: protótipo sim/não · código sim/não
+```
+
+- O ID é o prefixo da tela mais um número sequencial. IDs não se reaproveitam.
+- Decisão que muda não é editada: ganha ID novo, e a antiga passa a `substituída por`.
+- "Aplicada em" mostra o que falta corrigir de cada lado. O `/close-prototype` grava `protótipo sim · código não`; o `implementer` troca para `código sim` no commit que aplica a decisão.
+````
+
+Se `docs/telas/README.md` já existe, não reescreva. Aponte para ele no arquivo de instruções, com uma linha fora das três seções do pipeline — ex: `Decisões de tela (fonte da verdade da tela, acima do protótipo e do código): docs/telas/README.md`. Se já houver um ponteiro, não duplique.
 
 ## Parte 2 — `## Commands`
 
@@ -607,6 +644,7 @@ Ao finalizar, informe:
 >
 > **Tracker:** [tracker] — labels criadas: [lista]. Detalhe em `docs/agents/issue-tracker.md`.
 > **Protótipo:** `docs/agents/prototype.md` [com link | sem link — criado no protótipo inicial (`/prototype`) | já existia].
+> **Decisões de tela:** `docs/telas/README.md` [criado, mapa vazio — os arquivos de cada tela nascem no `/close-prototype` | já existia].
 > **Commands:** [lint [Ns] · typecheck [Ns] · test [Ns] · build [Ns] · clean [Ns | não declarado] | sem labels — repo sem manifesto; a unidade que criar o manifesto os declara]
 > **Fluxo:** gravado no arquivo de instruções.
 > **Remote:** [URL].

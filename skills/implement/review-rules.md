@@ -292,6 +292,18 @@ function formatUserDisplayName(user: User) { ... }
 
 **Não é achado:** arquivo novo que é só mais uma instância de um padrão já documentado (uma rota, uma página); teste novo num seam que já existe; edição de arquivo existente que não muda camada, seam nem invariante; a simples ausência de `docs/agents/architecture.md` no repo quando o diff não faz mudança estrutural — o `setup-project` o gera, e o `implementer` o cria na primeira mudança estrutural; mudança no manifesto que não toca script de gate (dependência, versão, metadado); `clean` ausente; ausência de `.github/workflows/ci.yml` quando o diff não cria manifesto nem muda script de gate; job `audit` ausente em projeto que não tem `package.json`.
 
+## CL7 — Mudança de tela acompanhada no arquivo de decisões da tela
+
+**Regra:** se o diff muda o que o usuário vê numa tela — layout, componente, texto de interface, fluxo entre telas —, o código respeita as decisões com `Estado: vale` do arquivo dessa tela em `docs/telas/`, e o mesmo diff atualiza esse arquivo: marca `código sim` na decisão que aplicou, registra como decisão nova o comportamento visível que nenhuma decisão `vale` cobria, e mantém a coluna "Rotas e componentes" do mapa em `docs/telas/README.md` quando cria, move ou renomeia rota ou componente da tela.
+
+**Por quê:** o arquivo de decisões é a fonte da verdade da tela, acima do protótipo e do código. Quando o código muda sem ele, protótipo e código divergem e nenhum dos dois serve para corrigir o outro — o arquivo é o único lugar que diz qual dos dois está certo. Documento vivo sem fiscal apodrece sozinho, como na CL6: o dono é o `implementer`, e quem cobra é você.
+
+**Como checar** — por leitura do diff e do código, sem executar nada: para cada arquivo de UI do diff, ache a tela dele na coluna "Rotas e componentes" do mapa de `docs/telas/README.md`. Arquivo de rota ou componente novo, ou movido, que não aparece no mapa = achado. Para cada tela tocada, leia o arquivo dela e compare as decisões `vale` com o que o diff faz. Depois, procure o arquivo da tela na lista de arquivos do diff: decisão que o ticket cita em `## Screen decisions`, ou que o diff aplicou, ainda com `código não` = achado; comportamento visível novo sem decisão que o cubra = achado.
+
+**Severidade:** CRITICAL quando o diff contradiz uma decisão com `Estado: vale` — é regressão de comportamento decidido pelo dono, e só ele a desfaz, pelo `/prototype`. WARN para o resto (arquivo de decisões não atualizado, mapa desatualizado): o conserto é uma linha.
+
+**Não é achado:** mudança sem efeito visível (refactor, teste, tipo, lógica de servidor que não muda o que a tela mostra); correção de bug que devolve a tela ao que uma decisão `vale` já descreve, quando a decisão já está com `código sim`; ajuste coberto pelo design doc (cor, espaçamento, raio, tipografia) sem decisão de tela envolvida; a ausência de `docs/telas/` no repo — projeto configurado antes dela, e o revisor segue sem esta regra.
+
 ---
 
 # Complexidade (C)

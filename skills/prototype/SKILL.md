@@ -34,12 +34,15 @@ Tell the user in one line which moment you detected.
 4. Always create the artifact as a **Design** type (`/design`), a single one per project: mobile (390×844) and desktop (1280×800) artboards, linked to each other, with a navigable Play.
 5. Do not invent real data (contact, address, price, people's names). Sample content is marked as a sample.
 6. Give the user the artifact's name and link and stay open for adjustments.
+7. Keep, in the session, a list of the decisions taken per screen: what the user sees and does, and why, including what was tried and rejected. `/close-prototype` turns it into the screens' decision files in `docs/telas/` (see `docs/telas/README.md` for the format).
 
 **Do not touch the repo during the adjustments:** no commit, branch or PR. The name and link only go into `docs/agents/prototype.md` through `/close-prototype`, after approval.
 
 ## 3. Change
 
 Read the issue with the "Ver" command from `docs/agents/issue-tracker.md` (body and every comment). Change the artifact named in `docs/agents/prototype.md` with the issue's decisions, without creating another one, and stay open for adjustments.
+
+Before changing the artifact, read the decision files of the screens the issue touches, from `origin/main` (`git show origin/main:docs/telas/README.md`, then each screen's file named in its map). They are the source of truth of each screen: the prototype follows them. When the issue, or an adjustment the user asks for, contradicts a decision whose state is `vale`, say so to the user, citing the ID, before changing the artifact. If the user confirms, it is a new decision that supersedes the old one, and `/close-prototype` records it that way. Keep, in the session, the list of decisions taken per screen, as in the initial prototype. Without `docs/telas/` (project configured before it existed), skip this and tell the user in one line.
 
 ## In both moments
 

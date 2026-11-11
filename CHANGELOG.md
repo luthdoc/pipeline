@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.11.0 — 2026-11-11
+
+- **Decisões de tela em `docs/telas/`, fonte da verdade da tela.** Cada tela tem um arquivo de decisões no repo do projeto, e o protótipo e o código derivam dele: quem diverge do arquivo está errado. Cada decisão tem ID por tela (`PDV-07`), decisão, por quê, origem, estado (`vale` ou `substituída por`) e "Aplicada em" (protótipo, código), que mostra o que falta corrigir de cada lado. Decisão que muda ganha ID novo, e a antiga passa a `substituída por`. Tokens e componentes continuam no design doc; regras de negócio, no `docs/prd.md`.
+- **Mapa tela → rotas e componentes** em `docs/telas/README.md`, com arquivo e prefixo de ID de cada tela. É por ele que o revisor sabe a qual tela um arquivo do diff pertence.
+- **`setup-project`**, passo 8 da Parte 1: cria `docs/telas/README.md` com a convenção e o mapa vazio, e o ponteiro no arquivo de instruções.
+- **`prototype`**: no inicial, a sessão guarda a lista de decisões por tela. Na alteração, lê os arquivos das telas tocadas antes de mudar o artifact, e avisa, citando o ID, quando a issue ou um ajuste contradiz uma decisão `vale`.
+- **`close-prototype`**: no inicial, cria o arquivo de cada tela e as linhas do mapa. Na alteração, passo novo (4) grava as decisões confirmadas antes de reescrever a issue, e o ticket ganha `## Screen decisions` com os IDs. A gravação segue a regra de escopo pequeno: até uns 30 linhas de `.md`, direto na `main`; acima disso, branch e PR abertos depois da aprovação.
+- **`implementer`**: peça que mexe no que o usuário vê lê o arquivo da tela, e as decisões `vale` são contrato junto com os ACs; AC que contradiz uma delas é `ESCALAR`. No mesmo commit, marca `código sim` no que aplicou, mantém o mapa e registra como decisão nova (`Origem: código`) o comportamento visível que o ticket pede e nenhuma decisão cobria.
+- **CL7 no `review-rules.md`**: mudança de tela acompanhada no arquivo de decisões. CRITICAL quando o diff contradiz decisão `vale`; WARN para arquivo ou mapa desatualizado.
+- **Motivo.** Num projeto, protótipo e código divergiram nos dois sentidos: parte das decisões estava certa só no protótipo, parte só no código, e nenhum dos dois guardava o porquê. Projeto configurado antes desta versão não tem `docs/telas/`; as skills seguem sem ela e avisam.
+
 ## 0.10.0 — 2026-11-02
 
 - **Protótipo em dois momentos, com o mesmo comando.** Skill nova `prototype`: `/prototype` abre a sessão do protótipo e descobre o momento pelo estado do repo, lendo `docs/agents/prototype.md` da `origin/main` depois de um `git fetch`. Sem link, é o **protótipo inicial**; com link e uma issue `needs-prototype`, é a **alteração**, que segue como antes. Até aqui, sem link a sessão parava, e o protótipo inicial não tinha regra nenhuma.
