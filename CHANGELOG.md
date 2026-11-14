@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.0 — 2026-11-13
+
+- **Uma SPEC = uma branch = um PR.** A sessão do `/to-spec` não implementa e não abre PR. A implementação sai num único PR do `/implement`, na branch da SPEC. Decisões de tela (na alteração do `/close-prototype`), docs e chore que pertençam à SPEC entram como commits nessa branch, não em PRs paralelos. PR de docs à parte só fora de uma SPEC aberta. A regra de escopo pequeno também não se aplica a arquivo de uma SPEC aberta. Motivo: uma família de SPEC saiu em 6 PRs (docs/chore numa branch, implementação noutra); o PR da implementação conflitou com o de docs, e tickets fecharam antes do merge.
+- **Revisão de segurança em sessão nova para `risk:alto`.** Skill nova `code-review`: confronta SPEC × diff com o checklist S1–S5 (segredos, input, autenticação e RLS, dados mínimos, filtro de origem) numa sessão com contexto limpo, não a que implementou. O `/implement` abre o PR, não move para `in-review` e pede essa sessão. O autorreview na sessão do `/implement` continua, e a passada de segurança daquela sessão segue como primeiro filtro, agora em S1–S5. Dispara se o PR for classificado `risk:alto` ou se a issue/SPEC (ou um ticket dela) já carregar o rótulo.
+- **S5 em `review-rules.md`:** filtro de origem e fronteira de confiança. Evento, webhook ou requisição só é processado depois de a origem esperada ser conferida. Motivo: o revisor da mesma sessão aprovou um PR em que o filtro aceitava eventos de outros números.
+- **`close-prototype` na alteração:** grava as decisões na branch da SPEC e não abre PR próprio.
+- README, `to-tickets`, `setup-project` (modelo por etapa e descrição de `in-review`) e o fluxograma acompanham.
+
+
 ## 0.11.0 — 2026-11-11
 
 - **Decisões de tela em `docs/telas/`, fonte da verdade da tela.** Cada tela tem um arquivo de decisões no repo do projeto, e o protótipo e o código derivam dele: quem diverge do arquivo está errado. Cada decisão tem ID por tela (`PDV-07`), decisão, por quê, origem, estado (`vale` ou `substituída por`) e "Aplicada em" (protótipo, código), que mostra o que falta corrigir de cada lado. Decisão que muda ganha ID novo, e a antiga passa a `substituída por`. Tokens e componentes continuam no design doc; regras de negócio, no `docs/prd.md`.

@@ -51,7 +51,9 @@ Summarize the result in plain product language: what the user will see and do, w
 
 On an up-to-date copy of `origin/main`, write the confirmed decisions in the screens' files, following `docs/telas/README.md`: a new ID for each one, `Origem: protótipo — <date> — #<N>`, `Estado: vale`, `Aplicada em: protótipo sim · código não`. A decision that replaces an existing one is not an edit: the old one gets `Estado: substituída por <new ID>`. A screen that is new to the project gets its file and its row in the map, with "Rotas e componentes" empty. If `docs/telas/README.md` does not exist (project configured before it), create it with the content from the `setup-project` (Parte 1, passo 8).
 
-Show the diff and wait for the user's OK. Within the pipeline's small-scope rule (only `.md`, up to about 30 lines), commit directly to `main` and push; larger, open a branch and a PR. Never force push. Note the IDs: the ticket cites them.
+Show the diff and wait for the user's OK. **Do not commit these files to `main` and do not open a PR.** They belong to the issue's SPEC (or to the issue itself when it has no parent), and a SPEC becomes exactly one branch and one PR, opened later by `/implement`. A separate docs PR here is what produced conflicts with the implementation PR.
+
+Use the same branch rule as `implement`: ticket with a parent SPEC → `spec-<parent number>-<parent slug>`; no parent → `spec-<N>-<slug>`. Derive the slug from the issue (or parent) title, in kebab-case. `git fetch origin`, then check out the existing branch if it exists locally or on `origin/`; if it does not, create it from an up-to-date `origin/main`. Commit the screen-decision files on that branch, push, and stop. Never force push. Tell the user the commits will go out in the single `/implement` PR. Note the IDs: the ticket cites them.
 
 ### 5. Rewrite the issue as a ticket
 

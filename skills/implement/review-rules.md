@@ -15,7 +15,7 @@ Numa equipe real ninguém pede ao revisor que rode `npm audit`, e ninguém audit
 
 O revisor aponta a **classe** do bug, não só a linha. Quem corrige é o `implementer`, e a correção cobre todas as ocorrências daquela classe nos arquivos que o diff toca. O formato (`CLASSE`, `CORRIGIR`, `OUTRAS`) está no `reviewer.md`. Arquivo que o diff não toca não entra na varredura.
 
-Todo CRITICAL e todo WARN volta com resposta: `corrigido`, ou `recusado` com motivo. A resposta vai para `## Achados do revisor` no corpo do PR. Resposta faltando conta como pendente. NIT não abre rodada e não vira ticket; a resposta registrada no PR é `recusado: NIT — não entra no loop de correção`. O teto de rodadas da unidade continua 2. A passada de segurança de um PR `risk:alto` é um ciclo à parte, só S1–S4, e não sobe esse teto.
+Todo CRITICAL e todo WARN volta com resposta: `corrigido`, ou `recusado` com motivo. A resposta vai para `## Achados do revisor` no corpo do PR. Resposta faltando conta como pendente. NIT não abre rodada e não vira ticket; a resposta registrada no PR é `recusado: NIT — não entra no loop de correção`. O teto de rodadas da unidade continua 2. A passada de segurança de um PR `risk:alto` é um ciclo à parte, S1–S5, e não sobe esse teto. Em `risk:alto`, o merge ainda espera a revisão da skill `code-review` numa sessão nova.
 
 ## Bug que escapa vira regra
 
@@ -104,6 +104,20 @@ return await db.users.findById(id);
 // ✅ projeta apenas o necessário
 return await db.users.findById(id, { select: ['id', 'name', 'email'] });
 ```
+
+---
+
+## S5 — Filtro de origem e fronteira de confiança
+
+**Regra:** evento, webhook, mensagem ou requisição que declara vir de uma origem específica (número, conta, tenant, loja, app, assinatura de webhook) só é processado depois de a origem ser conferida contra a origem esperada. Aceitar evento de outro número, outro tenant ou outra fonte é achado CRITICAL.
+
+**Por quê:** um defeito desta classe passou pelo revisor da mesma sessão que implementou (filtro de webhook que aceitava eventos de outros números). Verificação de autenticação no servidor (S3) não cobre sozinha o recorte de origem: o pedido pode estar autenticado e mesmo assim ser de outra conta.
+
+**Como checar:** para cada ponto de entrada que recebe evento externo ou opera sobre um recurso alheio, verifique no diff se a origem (número, `from`, tenant, `account_id`, loja, canal) é filtrada ou autorizada antes do processamento, e se o teste cobre o caso de origem errada. Ausência de filtro onde o contrato da SPEC ou dos ACs limita a origem é CRITICAL.
+
+**O que fazer se falhar:** recuse ou descarte o evento cuja origem não é a esperada, antes de qualquer efeito colateral, e cubra com teste o caso negativo.
+
+---
 
 > **Vulnerabilidade de dependência não é critério de review.** Ela exige executar `npm audit`, e o revisor não executa nada — cai na regra de admissão. Vive na CI (`.github/workflows/ci.yml`), que o `setup-project` grava e que roda `npm audit --audit-level=high` num checkout limpo, em todo PR de projeto Node. `high` falha o job em vulnerabilidade alta ou crítica; `moderate` fica de fora para o aviso transitivo sem correção não pintar todo PR de vermelho. O lugar é esse por um motivo mais forte que a ferramenta: vulnerabilidade não aparece porque alguém mexeu no manifesto, aparece porque alguém publicou um aviso sobre um pacote que já estava lá. Um gate condicional ao diff nunca pegaria o caso comum.
 

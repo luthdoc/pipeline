@@ -23,7 +23,7 @@ Depois, uma vez por projeto, rode a skill `setup-project`.
 ## Fluxo
 
 ```
-to-prd  →  prototype + close-prototype (protótipo inicial)  →  to-spec  →  to-tickets (se não couber numa janela)  →  implement
+to-prd  →  prototype + close-prototype (protótipo inicial)  →  to-spec  →  to-tickets (se não couber numa janela)  →  implement  →  code-review (se risk:alto)
 ```
 
 Pelos rótulos de uma issue — a segunda linha é a da issue que mexe no que o usuário vê:
@@ -37,12 +37,13 @@ needs-triage  →  grill-with-issues  →  needs-prototype  →  prototype <N>  
 |---|---|
 | `setup-project` | Configura o repo: tracker, labels, `## Commands`, `## Fluxo`, remote, template de PR, CI, rótulos de risco. Uma vez por projeto. |
 | `to-prd` | Escreve `docs/prd.md` — requisitos e a lista de SPECs. |
-| `to-spec` | Transforma a conversa numa SPEC publicada no tracker. |
+| `to-spec` | Transforma a conversa numa SPEC publicada no tracker. A sessão não implementa e não abre PR. |
 | `to-tickets` | Fatia uma SPEC em tickets verticais com dependências. |
 | `grill-with-issues` | Entrevista sobre uma issue, reescreve como ticket e roteia: `needs-prototype` se mexe no que o usuário vê; senão `ready-for-agent` ou `needs-spec`. |
 | `prototype` | Abre a sessão do protótipo e descobre o momento pelo repo: sem link em `docs/agents/prototype.md`, cria o protótipo inicial a partir do PRD; com link e uma issue `needs-prototype`, altera o artifact existente. |
-| `close-prototype` | Fecha a sessão do protótipo. No inicial, grava nome e link em `docs/agents/prototype.md` e cria o arquivo de decisões de cada tela em `docs/telas/`. Na alteração, junta issue e protótipo, confirma, grava as decisões em `docs/telas/`, reescreve a issue como ticket citando os IDs e troca `needs-prototype` por `ready-for-agent` ou `needs-spec`. |
-| `implement` | Loop implementar → revisar → corrigir → re-revisar, com branch e PR. O PR sai com risco, gates e como desfazer. |
+| `close-prototype` | Fecha a sessão do protótipo. No inicial, grava nome e link em `docs/agents/prototype.md` e cria o arquivo de decisões de cada tela em `docs/telas/`. Na alteração, junta issue e protótipo, confirma, grava as decisões na branch da SPEC (sem PR próprio), reescreve a issue como ticket citando os IDs e troca `needs-prototype` por `ready-for-agent` ou `needs-spec`. |
+| `implement` | Loop implementar → revisar → corrigir → re-revisar. Uma SPEC vira uma branch e um PR só. O PR sai com risco, gates e como desfazer. |
+| `code-review` | Revisão de segurança em sessão nova para `risk:alto`: confronta SPEC × diff com o checklist S1–S5, antes do `in-review` e do merge. Não altera código. |
 
 ## Modelo por etapa
 
@@ -53,6 +54,7 @@ Para controlar o uso de tokens, cada sessão abre com o modelo da etapa. No Clau
 | `grill-me` / `grill-with-issues`, `to-prd`, `to-spec`, `to-tickets` | `claude-sonnet-5-5` | padrão |
 | Sessão do protótipo (`/prototype`, até o `/close-prototype`) | `claude-opus-5-5` | `medium` |
 | `implement` | `claude-opus-5-5` | padrão |
+| `code-review` (sessão nova, `risk:alto`) | `claude-opus-5-5` | padrão |
 
 O modelo vale para a sessão inteira, por isso entra no comando que a abre, e não no frontmatter da skill.
 
@@ -60,9 +62,15 @@ O modelo vale para a sessão inteira, por isso entra no comando que a abre, e n�
 
 Nunca force push. Se a branch da sessão foi apagada no merge, crie uma branch com nome novo a partir da `origin/main` atualizada.
 
+## Uma SPEC, uma branch, um PR
+
+A sessão do `/to-spec` não implementa. A implementação de uma SPEC sai num único PR do `/implement`, na única branch da SPEC. Decisões de tela (na alteração), docs e chore que pertençam à SPEC entram como commits nessa branch, não em PRs paralelos — um PR de docs à parte, aberto no meio da SPEC, foi o que gerou conflito com o PR da implementação. PR de documentação à parte só fora de uma SPEC aberta.
+
+Toda issue ou PR com o rótulo `risk:alto` passa, antes do `in-review` e do merge, por uma revisão de segurança da skill `code-review` numa **sessão nova** (contexto limpo, não a que implementou). O autorreview na sessão do `/implement` continua para o resto, e a passada de segurança daquela sessão segue como primeiro filtro.
+
 ## Escopo pequeno: commit direto na main
 
-Mudança só de texto ou documentação (`.md` e comentários), com até uns 30 linhas e sem código, CI, config nem migration, não abre PR. O agente mostra o diff ao usuário, espera o OK e commita direto na `main`. Todo o resto segue por branch e PR.
+Mudança só de texto ou documentação (`.md` e comentários), com até uns 30 linhas e sem código, CI, config nem migration, não abre PR. O agente mostra o diff ao usuário, espera o OK e commita direto na `main`. Todo o resto segue por branch e PR. A regra **não se aplica** a arquivo que pertence a uma SPEC aberta: ele vai na branch da SPEC, no único PR do `/implement`.
 
 ## Protótipo
 
@@ -77,7 +85,7 @@ O artifact e o código não guardam o porquê de nada, e um não serve para corr
 
 - **Formato** — cada decisão tem ID por tela (`PDV-07`), decisão, por quê, origem, estado (`vale` ou `substituída por`) e onde já está aplicada (protótipo, código). Decisão que muda não é editada: ganha ID novo, e a antiga passa a `substituída por`.
 - **Mapa** — `docs/telas/README.md` lista cada tela com o arquivo, o prefixo de ID e as rotas e componentes que ela cobre. É por ele que o revisor sabe a qual tela um arquivo do diff pertence.
-- **Quem escreve** — o `setup-project` cria o README com o mapa vazio. O `/close-prototype` grava as decisões aprovadas (no inicial, cria o arquivo de cada tela), com "protótipo: sim, código: não". O `implementer` preenche as rotas e componentes no mapa e marca "código: sim" no mesmo commit que aplica a decisão.
+- **Quem escreve** — o `setup-project` cria o README com o mapa vazio. O `/close-prototype` grava as decisões aprovadas (no inicial, cria o arquivo de cada tela e pode ir à `main` ou a um PR próprio, porque ainda não há SPEC; na alteração, commita na branch da SPEC, sem PR próprio), com "protótipo: sim, código: não". O `implementer` preenche as rotas e componentes no mapa e marca "código: sim" no mesmo commit que aplica a decisão.
 - **Quem lê** — o `/prototype` antes de alterar o artifact, o `implementer` antes de mexer em UI, e o revisor, que cobra pela CL7.
 
 Nos dois momentos, os ajustes vêm pelo chat da sessão: comentário deixado no artifact não chega a ela.
