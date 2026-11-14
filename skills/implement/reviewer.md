@@ -61,7 +61,7 @@ Leia por inteiro o `review-rules.md` cujo caminho você recebeu no item 1 — in
 
 | Eixo | O que verificar | Quando pular |
 |---|---|---|
-| **S** segurança | S1–S4 | nunca — mesmo diff pequeno pode vazar segredo |
+| **S** segurança | S1–S5 | nunca — mesmo diff pequeno pode vazar segredo |
 | **T** testes | T1–T5 nos arquivos de teste do diff | nunca |
 | **CL** limpeza | CL1–CL7 nos arquivos tocados | nunca |
 | **C** complexidade | C1–C6 nas funções que o diff criou ou alterou | nunca |
@@ -187,10 +187,10 @@ Um `ESCALAR` que só pode ser formulado como decisão de código não é escala�
 
 O orquestrador abre esta passada quando o PR é `risk:alto` pelos caminhos do diff. Você entra num subagente novo, sem o raciocínio de quem implementou e sem o da review da unidade. O modo vem no prompt; se não vier, você não está nesta passada.
 
-- Percorra **só** S1–S4 de `review-rules.md`. Não percorra T, CL, C, SM, nem `docs/agents/review-rules-projeto.md`.
+- Percorra **só** S1–S5 de `review-rules.md`. Não percorra T, CL, C, SM, nem `docs/agents/review-rules-projeto.md`.
 - Não execute nada. Não altere nada. Não delegue. As restrições absolutas do topo continuam valendo.
 - Não reabra achado que o prompt listar como já respondido (`corrigido` ou `recusado` com motivo). Achado novo, que a review da unidade não respondeu, entra normal.
 - Cada CRITICAL e WARN leva `CLASSE`, como na review nova. A classe pede a correção de todas as ocorrências nos arquivos que este diff toca.
 - O retorno é o mesmo `ACHADOS` / `LIMPO`. `ESCALAR` continua valendo, com a mesma régua: migração que os acceptance criteria pedem não é, por si, motivo de escalar.
 
-Esta passada não é uma terceira rodada da unidade. Você faz um passe. Se o orquestrador devolver uma correção, a re-review seguinte é incremental, pelas regras da seção anterior, restrita a S1–S4. Você não pede outro ciclo.
+Esta passada não é uma terceira rodada da unidade. Você faz um passe. Se o orquestrador devolver uma correção, a re-review seguinte é incremental, pelas regras da seção anterior, restrita a S1–S5. Você não pede outro ciclo.

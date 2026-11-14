@@ -2,10 +2,12 @@
 name: implement
 description: >
   Roda o loop de implementação — implementar → revisar → corrigir → re-revisar —
-  sobre uma unidade de trabalho, e abre branch e PR ao final. Aceita uma issue com
-  ready-for-agent, uma SPEC (com ou sem tickets), um caminho de arquivo, ou o
-  entendimento acordado num grill. Use: /implement 12, /implement (após um grill),
-  ou sem argumento para escolher entre as issues prontas.
+  sobre uma unidade de trabalho, e abre uma branch e um PR ao final (uma SPEC
+  vira uma branch e um PR só). Em issue ou PR risk:alto, a revisão de segurança
+  numa sessão nova (/code-review) vem antes do in-review e do merge. Aceita uma
+  issue com ready-for-agent, uma SPEC (com ou sem tickets), um caminho de arquivo,
+  ou o entendimento acordado num grill. Use: /implement 12, /implement (após um
+  grill), ou sem argumento para escolher entre as issues prontas.
 disable-model-invocation: true
 ---
 
@@ -121,6 +123,8 @@ Antes de escolher a branch, descubra se a unidade tem **SPEC pai**, pelo comando
 Recriar da `main` faz o trabalho dos tickets irmãos sumir do diff, e o `implementer` reimplementa dependência que já existe. Checar também o `origin/` cobre a retomada em outra máquina, onde a branch ainda não existe localmente.
 
 **Branch e PR sempre**, inclusive sem tracker — é o que mantém o controle de versão.
+
+**Uma SPEC, uma branch, um PR.** A SPEC inteira — tickets, decisões de tela, docs e chore que pertençam a ela — entra como commits nessa única branch, e sai num único PR, aberto por esta skill quando a SPEC fecha. Não abra um segundo PR (nem de docs, chore ou decisões de tela) em paralelo ou em sequência para a mesma SPEC: foi isso que fragmentou uma família em vários PRs, gerou conflito entre um PR de docs e o da implementação, e fechou tickets antes do merge. PR de documentação à parte só para trabalho que não pertence a nenhuma SPEC aberta. A sessão do `/to-spec` não implementa e não abre esse PR. A regra de escopo pequeno (commit direto na `main`) também não se aplica a arquivo que pertence a uma SPEC aberta — ele vai nesta branch.
 
 ### 3. `clean` e baseline
 
@@ -270,11 +274,7 @@ Depois, conforme o que a unidade é:
 
   Fechar antes de tirar a label: se a sessão cair entre os dois, o ticket já está fechado e conta como concluído. Na ordem inversa, ele ficaria aberto e sem label, e a fronteira o pegaria de novo.
 
-- **Issue sem pai e sem tickets** → mova para `in-review` e siga direto para o PR. Ela é o alvo do PR: fecha no merge, e quem a fecha é o GitHub.
-
-  ```bash
-  gh issue edit [N] --add-label "in-review" --remove-label "in-progress"
-  ```
+- **Issue sem pai e sem tickets** → não mova para `in-review` ainda. Siga para o PR: a label `in-review` entra em "Abrir o PR", e só depois da revisão de segurança em sessão nova quando o caso for `risk:alto`. Ela é o alvo do PR: fecha no merge, e quem a fecha é o GitHub.
 
 **Cole a evidência que você recebeu; não parafraseie.** O resultado por label vem do worker que o executou — você não mediu nada durante o loop e não tem de onde tirar um número. Se um dado não veio, escreva **"não reportado"**. Nunca preencha com o plausível: um PR que diz "não reportado" é honesto e conserta-se; um PR que inventa `test ok (56 passed)` é indistinguível de um PR verdadeiro.
 
@@ -290,7 +290,7 @@ Um card **anda** entre estados, não acumula colunas. **Toda transição remove 
 |---|---|---|
 | `ready-for-agent` | pegável | `to-spec` / `to-tickets` |
 | `in-progress` | agente no loop — implementando ou em review | você, ao começar |
-| `in-review` | aprovada pelo revisor, aguardando merge — **só SPEC ou issue sem tickets** | você: a issue sem tickets ao aprová-la, a SPEC ao abrir o PR |
+| `in-review` | aprovada pelo revisor (e, em `risk:alto`, pela revisão de segurança em sessão nova), aguardando merge — **só SPEC ou issue sem tickets** | você, ao abrir o PR, se não for `risk:alto`; a skill `code-review`, numa sessão nova, quando for |
 | *(fechada)* | ticket: aprovado pelo revisor, código na branch · SPEC ou issue sem tickets: está na `main` | ticket: **você, ao aprovar** · resto: **GitHub, no merge** |
 | `ready-for-human` | bloqueada | você, no Protocolo de Bloqueio |
 
@@ -300,7 +300,7 @@ Um ticket nunca recebe `in-review`: o caminho dele é `ready-for-agent` → `in-
 gh issue edit [N] --add-label "in-progress"  --remove-label "ready-for-agent"
 gh issue close [N] --reason completed                      # ticket aprovado (passo 1 de 2)
 gh issue edit [N] --remove-label "in-progress"            # ticket aprovado (passo 2 de 2)
-gh issue edit [N] --add-label "in-review"    --remove-label "in-progress"   # issue sem tickets aprovada
+gh issue edit [N] --add-label "in-review"    --remove-label "in-progress"   # issue sem tickets, ao abrir o PR (ou após /code-review em risk:alto)
 gh issue edit [N] --add-label "ready-for-human" --remove-label "in-progress"
 ```
 
@@ -311,7 +311,8 @@ Adicionar sem remover deixa a issue com `ready-for-agent` + `in-progress` + `in-
 | Quando | SPEC vai para |
 |---|---|
 | o primeiro ticket entra em `in-progress` | `in-progress` |
-| o PR abre | `in-review` |
+| o PR abre, e não é `risk:alto` | `in-review` |
+| em `risk:alto`, a sessão nova do `/code-review` aprova | `in-review` |
 
 ```bash
 gh issue edit [SPEC] --add-label "in-progress" --remove-label "ready-for-agent"
@@ -365,7 +366,7 @@ Cite cada caminho que decidiu a classe, e qual classe foi. Em `risk:medio`, diga
 
 ### Passada de segurança
 
-Só em `risk:alto`. Abra um subagente novo, contexto limpo, prompt `reviewer.md`, em modo **passada de segurança**. Passe: o caminho absoluto de `review-rules.md`, o diff `git diff main...HEAD`, a raiz absoluta do repositório, e a lista de achados que as reviews das unidades já responderam (`corrigido` ou `recusado` com motivo). A instrução é a seção "Passada de segurança" do `reviewer.md`: só S1–S4. Não passe nota do `implementer`. A classificação explica por que a passada existe; ela não diz o que a passada tem que concluir.
+Só em `risk:alto`. Abra um subagente novo, contexto limpo, prompt `reviewer.md`, em modo **passada de segurança**. Passe: o caminho absoluto de `review-rules.md`, o diff `git diff main...HEAD`, a raiz absoluta do repositório, e a lista de achados que as reviews das unidades já responderam (`corrigido` ou `recusado` com motivo). A instrução é a seção "Passada de segurança" do `reviewer.md`: S1–S5. Não passe nota do `implementer`. A classificação explica por que a passada existe; ela não diz o que a passada tem que concluir.
 
 Essa passada **não soma no `loop_count`** e não sobe o teto de 2 da unidade. O ciclo dela é um:
 
@@ -380,7 +381,7 @@ Achado que a review da unidade já respondeu não se reabre aqui. O revisor rece
 
 ## Abrir o PR
 
-**Quando:** com tracker, o PR só abre quando a **SPEC inteira** fecha — todos os tickets fechados. Ticket cujo pai ainda tem irmãos abertos: dê push na branch, reporte o que falta, e **não abra PR** — sem classificação de risco e sem passada de segurança. Senão a SPEC chega na `main` em pedaços. Na abertura de fato, a classificação e a passada acontecem antes deste push; um commit da passada entra nele.
+**Quando:** com tracker, o PR só abre quando a **SPEC inteira** fecha — todos os tickets fechados. Ticket cujo pai ainda tem irmãos abertos: dê push na branch, reporte o que falta, e **não abra PR** — sem classificação de risco e sem passada de segurança. Senão a SPEC chega na `main` em pedaços. Na abertura de fato, a classificação e a passada na sessão acontecem antes deste push; um commit da passada entra nele. A revisão de segurança em **sessão nova** (`/code-review`) não roda aqui — ver o parágrafo seguinte.
 
 ```bash
 git push origin [BRANCH]
@@ -394,7 +395,12 @@ gh label create "risk:medio" --color "FBCA04" --description "PR fora das listas 
 gh label create "risk:baixo" --color "0E8A16" --description "PR so de documentacao, texto ou estilo" --force
 ```
 
-Abra com `gh pr create --draft --base main --title "[título da unidade]" --body-file [arquivo] --label "[risk:alto | risk:medio | risk:baixo]"`. O `--label` leva só o rótulo calculado. Na retomada, se o PR já existe, `gh pr edit [PR] --add-label "[rótulo]"` e remova os outros dois `risk:*` que estiverem aplicados. Sem `gh`, grave a linha no corpo e diga no relatório que o rótulo não foi aplicado. Com SPEC fatiada, mova a SPEC para `in-review` logo depois (ver "Transições de estado"). O corpo, gravado antes num arquivo em `.scratch/`, contém:
+Abra com `gh pr create --draft --base main --title "[título da unidade]" --body-file [arquivo] --label "[risk:alto | risk:medio | risk:baixo]"`. O `--label` leva só o rótulo calculado. Na retomada, se o PR já existe, `gh pr edit [PR] --add-label "[rótulo]"` e remova os outros dois `risk:*` que estiverem aplicados. Sem `gh`, grave a linha no corpo e diga no relatório que o rótulo não foi aplicado. Depois de criar o PR, decida se a **revisão de segurança em sessão nova** é obrigatória: é, se o PR foi classificado `risk:alto` **ou** se a SPEC, a issue ou algum ticket dela já carrega o rótulo `risk:alto`. Não rode o `/code-review` nesta sessão — o contexto de quem implementou já está aqui, e foi exatamente isso que deixou passar um defeito de segurança (filtro de origem) depois de o revisor da mesma sessão aprovar.
+
+- **Não é `risk:alto`** → com SPEC fatiada ou issue sem tickets, mova a issue alvo para `in-review` (ver "Transições de estado").
+- **É `risk:alto`** → **não** mova para `in-review`. No corpo do PR, a seção `## Revisão de segurança` diz que espera `/code-review` numa sessão nova. Informe a URL do PR e peça ao usuário para abrir uma sessão nova, com contexto limpo, e rodar `/code-review <PR>`. Esta sessão não declara o trabalho pronto para merge. Se o PR já existia e ainda espera essa revisão, não a faça aqui: só recorde o comando.
+
+O corpo do PR, gravado antes num arquivo em `.scratch/`, contém:
 
 - **`Closes #N`** — da SPEC (o pai, quando a unidade é ticket), ou da issue sem pai e sem tickets. Os tickets já estão fechados; liste-os em "O que entrou", não em `Closes`. A palavra-chave é **literal em inglês**: o GitHub só reconhece `close/closes/closed`, `fix/fixes/fixed`, `resolve/resolves/resolved`. Traduzir (`Fecha #27`) **falha em silêncio** — a linha é ignorada, o PR merga e as issues ficam abertas com o código na `main`. Já aconteceu. O resto do corpo continua em português. Omitir só sem tracker, que não tem issue.
 - **`## O que entrou`** — a lista de unidades implementadas, ou a descrição do que foi acordado no grill
@@ -405,6 +411,7 @@ Abra com `gh pr create --draft --base main --title "[título da unidade]" --body
   - Depois do merge: `git revert` do merge commit.
   - Deploy: se o projeto tem `vercel.json`, `vercel.ts`, ou o arquivo de instruções diz Vercel, rollback para o deployment anterior. Senão, o revert na `main` e o deploy que a `main` dispara. Não invente painel que o repo não usa.
   - Se o diff traz migração, uma quarta linha: o revert do git não desfaz schema. O reverso, a ordem com o merge e o que se perde estão no comentário da pergunta de aplicação. Não reescreva essa pergunta nesta seção.
+- **`## Revisão de segurança`** — só em `risk:alto`: "Espera `/code-review` numa sessão nova, com contexto limpo, antes do `in-review` e do merge." Quem preenche o resultado é a sessão do `/code-review`, não esta.
 - **`## Achados do revisor`** — cada CRITICAL, WARN e NIT das unidades, e os da passada de segurança, com a resposta: `corrigido` (classe e ocorrências) ou `recusado` (motivo). NIT leva `recusado: NIT — não entra no loop de correção`. Sem achado, a seção diz "Nenhum achado." Passada de segurança limpa: a linha "Passada de segurança: limpa".
 - **`## Ficou de fora`** — os tickets de follow-up abertos na arbitragem, cada um com número e uma linha em português. Sem follow-up, "Nada ficou de fora."
 - **Evidência por unidade** — commit, em quantos loops os achados foram resolvidos
@@ -472,7 +479,7 @@ O PR fica em draft esperando uma decisão humana, e quem decide é o dono do rep
 
 O bloco **Migrações** só entra quando o diff traz migração.
 
-Informe a URL do PR. Se a SPEC veio de um PRD, informe que a próxima SPEC pode rodar depois do merge.
+Informe a URL do PR. Se for `risk:alto`, informe também o comando da sessão nova (`/code-review <PR>`) e que o merge espera essa revisão. Se a SPEC veio de um PRD, informe que a próxima SPEC pode rodar depois do merge.
 
 ---
 

@@ -8,6 +8,8 @@ This skill takes the current conversation context and codebase understanding and
 
 **Two modes.** Without an argument, the source is the conversation and the spec is published as a new issue — the process below, exactly as written. With an issue number or URL (e.g. an issue labeled `needs-spec`), the source is the issue body, its comments and the conversation, and the spec is published on that same issue — see "Issue mode" at the end. Everything not marked as issue mode applies to both.
 
+**This session does not implement.** `/to-spec` only synthesizes and publishes the spec. It does not open a branch or a PR, does not commit code, docs, chore or screen decisions, and does not start `/implement`. A SPEC becomes exactly one branch and one PR, opened by `/implement` when the SPEC is complete — see implement, "Uma SPEC, uma branch, um PR". Docs or chore that belong to the SPEC wait for that PR; a separate docs PR is only for work outside any open SPEC.
+
 A spec is not a PRD, and in this repo the two are different live artifacts. The PRD (`docs/prd.md`) owns the product and its requirements, and lists the specs. A spec delivers a slice of those requirements. Never treat one as another name for the other.
 
 Read the `## Issue Tracker` section of the project's instructions file (`AGENTS.md`, or `CLAUDE.md` when there is no `AGENTS.md`), then `docs/agents/issue-tracker.md` — together they have the tracker's commands and the triage label vocabulary. If either is missing, stop immediately:
@@ -29,7 +31,7 @@ Decide the seams yourself and record them under Testing Decisions — do not ask
 
 4. Insert the issue number on the **first line** of `.scratch/<spec-slug>/spec.md`, in the form `#<N>`, now that it exists. That line is not decoration: `implement` locates this file by searching for the issue number, because the slug is not derivable from the issue. The file is gitignored and disposable; the issue is canonical. If they ever diverge, the issue wins.
 
-5. Say whether the spec fits one context window as a single unit of work. If it does, tell the user they can run `/implement <issue>` directly. If it doesn't, point at `/to-tickets <issue>` — that skill owns the slicing decision, not this one.
+5. Say whether the spec fits one context window as a single unit of work. If it does, tell the user they can run `/implement <issue>` in a **new** session — this one stops here. If it doesn't, point at `/to-tickets <issue>` — that skill owns the slicing decision, not this one. Either way, do not implement in this session.
 
 ## Issue mode
 

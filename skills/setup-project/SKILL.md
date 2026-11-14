@@ -204,7 +204,7 @@ Vocabulário padrão sugerido — apresente ao usuário para confirmação ou aj
 | `needs-spec` | Precisa de SPEC antes de implementar |
 | `needs-prototype` | Precisa de protótipo das telas antes de seguir |
 | `in-progress` | Agente no loop — implementando ou em review |
-| `in-review` | Aprovada pelo revisor, aguardando merge (só SPEC ou issue sem tickets) |
+| `in-review` | Aprovada pelo revisor (e, em `risk:alto`, pela `/code-review` em sessão nova), aguardando merge (só SPEC ou issue sem tickets) |
 
 `needs-prototype` é o rótulo que o `grill-with-issues` aplica quando a issue altera algo que o usuário vê. O `/prototype <N>` lê a issue e `docs/agents/prototype.md`, altera o artifact indicado com as decisões da issue e fica aberto para o usuário ajustar o protótipo conversando na sessão. Se `docs/agents/prototype.md` estiver sem link, o projeto ainda não tem protótipo inicial, e ele vem antes. Na mesma sessão, o `/close-prototype` reescreve a issue como ticket e troca `needs-prototype` por `ready-for-agent` ou `needs-spec`.
 
@@ -213,7 +213,7 @@ Vocabulário padrão sugerido — apresente ao usuário para confirmação ou aj
 **Duas propriedades deste vocabulário não são negociáveis:**
 
 - **Os estados são exclusivos.** Um card anda entre colunas, não acumula colunas. Toda transição remove o estado anterior. Adicionar sem remover deixa a issue em `ready-for-agent` + `in-progress` + `in-review` ao mesmo tempo, e a detecção de estado do `implement` — que pergunta "algo em `in-progress`?" — fica verdadeira para sempre.
-- **Não existe label de "concluída".** Issue fechada já é essa informação. Uma label `done` duplica o que o tracker já sabe e exige alguém para mantê-la — é mais um estado para desincronizar. Quem fecha depende do que a issue é: o **ticket** é fechado pelo `implement` assim que o revisor aprova, e é isso que faz o progresso de sub-issues da SPEC andar durante a execução; a **SPEC** (ou a issue sem tickets) fecha no merge, pelo `Closes #N` do corpo do PR. Por isso `in-review` só aparece em SPEC ou issue sem tickets: um ticket vai de `in-progress` direto para fechado. A review é parte do loop e não ganha label própria.
+- **Não existe label de "concluída".** Issue fechada já é essa informação. Uma label `done` duplica o que o tracker já sabe e exige alguém para mantê-la — é mais um estado para desincronizar. Quem fecha depende do que a issue é: o **ticket** é fechado pelo `implement` assim que o revisor aprova, e é isso que faz o progresso de sub-issues da SPEC andar durante a execução; a **SPEC** (ou a issue sem tickets) fecha no merge, pelo `Closes #N` do corpo do PR. Por isso `in-review` só aparece em SPEC ou issue sem tickets: um ticket vai de `in-progress` direto para fechado. A review da unidade é parte do loop e não ganha label própria. Em `risk:alto`, `in-review` só entra depois da skill `code-review` numa sessão nova.
 
 Este é o **único** vocabulário de labels do pipeline. Nenhum agente define o seu próprio — `implement` e `reviewer` leem daqui.
 
@@ -273,7 +273,7 @@ Bloqueio entre tickets: seção `## Blocked by` do corpo — fonte única, sem r
 
 `needs-prototype`: o `/prototype <N>` lê a issue e `docs/agents/prototype.md`, altera o artifact indicado com as decisões da issue e fica aberto para o usuário ajustar o protótipo pelo chat da sessão. Sem link em `docs/agents/prototype.md`, o `/prototype` cria antes o protótipo inicial a partir do `docs/prd.md`. O `/close-prototype`, na mesma sessão, fecha a etapa.
 
-Modelo por sessão: grill, `/to-prd`, `/to-spec` e `/to-tickets` com `claude-sonnet-5-5`; protótipo com `claude-opus-5-5` e `--effort medium`; `/implement` com `claude-opus-5-5`.
+Modelo por sessão: grill, `/to-prd`, `/to-spec` e `/to-tickets` com `claude-sonnet-5-5`; protótipo com `claude-opus-5-5` e `--effort medium`; `/implement` e `/code-review` com `claude-opus-5-5`. Uma SPEC vira uma branch e um PR só, aberto pelo `/implement`; a sessão do `/to-spec` não implementa. Em `risk:alto`, o merge espera `/code-review` numa sessão nova.
 ```
 
 **Arquivo de instruções** — bloco resumido:
@@ -429,10 +429,10 @@ A recomendação que qualquer agente dá ao usuário quando um entendimento comp
 Ao chegar num entendimento compartilhado de uma mudança, recomende uma das três saídas:
 
 - Cabe numa sessão e não muda contrato público (schema, rota, auth, API) → `/implement` direto, sem SPEC nem issue.
-- Muda contrato público, ou o registro rastreado importa → `/to-spec`.
+- Muda contrato público, ou o registro rastreado importa → `/to-spec` (a sessão do `/to-spec` não implementa; a SPEC vira uma branch e um PR só, no `/implement`).
 - Mais de uma SPEC prevista → `/to-prd` antes.
 
-Recomende, não decida — a escolha é do usuário. Em qualquer das três, branch e PR sempre.
+Recomende, não decida — a escolha é do usuário. Em qualquer das três, branch e PR sempre — e uma SPEC não se fragmenta em vários PRs. Issue ou PR `risk:alto` ainda passa por `/code-review` numa sessão nova antes do merge.
 ```
 
 Confirme o critério com o usuário antes de gravar: o limiar entre "implementa direto" e "vira SPEC" é dele, não seu.

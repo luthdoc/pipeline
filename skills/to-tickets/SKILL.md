@@ -46,7 +46,7 @@ Give each ticket its **blocking edges** — the other tickets that must complete
 
 ### 4. Decide the breakdown yourself
 
-Granularity, blocking edges, merging and splitting are yours to decide — do not quiz the user on them. They are code and context-window decisions, the owner may not read code, and they have no product effect: the PR opens only when the whole spec closes, so every ticket ships together regardless of how it was sliced. The pipeline escalates only product and risk decisions to a human.
+Granularity, blocking edges, merging and splitting are yours to decide — do not quiz the user on them. They are code and context-window decisions, the owner may not read code, and they have no product effect: the SPEC becomes exactly one branch and one PR, opened by `/implement` only when the whole spec closes, so every ticket — and any docs, chore or screen decisions that belong to the SPEC — ships together, regardless of how it was sliced. This skill does not implement and does not open a PR. The pipeline escalates only product and risk decisions to a human.
 
 Check each ticket against the vertical-slice rules above, and each edge against "does this ticket genuinely need that one's code to exist first?". Then publish.
 
@@ -69,7 +69,7 @@ After publishing, show the user the breakdown in plain product language — one 
 
 **Single trigger for automations.** `ready-for-agent` on a ticket that has a parent spec does not start a session of its own: the automation resolves the parent and runs `/implement <parent>` once, and `implement` works the frontier. That is why the tickets carry the label (they are what `/implement` lists) while the spec never does after slicing.
 
-Apart from that label, do NOT close or modify the parent issue. From here on the spec's label is a mirror that `implement` moves (`in-progress` when the first ticket starts, `in-review` when the PR opens).
+Apart from that label, do NOT close or modify the parent issue. From here on the spec's label is a mirror that `implement` moves (`in-progress` when the first ticket starts, `in-review` when the PR opens — or, on `risk:alto`, when the new-session `/code-review` approves).
 
 <local-ticket-template>
 
