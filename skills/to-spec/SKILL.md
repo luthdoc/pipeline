@@ -61,6 +61,15 @@ The problem that the user is facing, from the user's perspective.
 
 The solution to the problem, from the user's perspective.
 
+## O que nunca pode quebrar
+
+Poucas linhas, em linguagem de produto:
+
+- **Quem pode fazer o quê** — cada papel desta feature, inclusive quem não está logado e quem é de outra conta, e o que ele pode e não pode fazer.
+- **Regras que nunca podem ser violadas** — o que continua verdadeiro aconteça o que acontecer (ex.: "um valor a receber só some por pagamento ou estorno registrado").
+
+Cada linha vira teste adversarial no `/implement`, então escreva só o que dá para testar. Se a feature não muda permissão nem regra nenhuma, escreva "Nada novo" e o porquê em uma linha.
+
 ## User Stories
 
 A LONG, numbered list of user stories. Each user story should be in the format of:

@@ -204,7 +204,7 @@ Vocabulário padrão sugerido — apresente ao usuário para confirmação ou aj
 | `needs-spec` | Precisa de SPEC antes de implementar |
 | `needs-prototype` | Precisa de protótipo das telas antes de seguir |
 | `in-progress` | Agente no loop — implementando ou em review |
-| `in-review` | Aprovada pelo revisor (e, em `risk:alto`, pela `/code-review` em sessão nova), aguardando merge (só SPEC ou issue sem tickets) |
+| `in-review` | Aprovada pelo revisor, aguardando merge (só SPEC ou issue sem tickets) |
 
 `needs-prototype` é o rótulo que o `grill-with-issues` aplica quando a issue altera algo que o usuário vê. O `/prototype <N>` lê a issue e `docs/agents/prototype.md`, altera o artifact indicado com as decisões da issue e fica aberto para o usuário ajustar o protótipo conversando na sessão. Se `docs/agents/prototype.md` estiver sem link, o projeto ainda não tem protótipo inicial, e ele vem antes. Na mesma sessão, o `/close-prototype` reescreve a issue como ticket e troca `needs-prototype` por `ready-for-agent` ou `needs-spec`.
 
@@ -213,7 +213,7 @@ Vocabulário padrão sugerido — apresente ao usuário para confirmação ou aj
 **Duas propriedades deste vocabulário não são negociáveis:**
 
 - **Os estados são exclusivos.** Um card anda entre colunas, não acumula colunas. Toda transição remove o estado anterior. Adicionar sem remover deixa a issue em `ready-for-agent` + `in-progress` + `in-review` ao mesmo tempo, e a detecção de estado do `implement` — que pergunta "algo em `in-progress`?" — fica verdadeira para sempre.
-- **Não existe label de "concluída".** Issue fechada já é essa informação. Uma label `done` duplica o que o tracker já sabe e exige alguém para mantê-la — é mais um estado para desincronizar. Quem fecha depende do que a issue é: o **ticket** é fechado pelo `implement` assim que o revisor aprova, e é isso que faz o progresso de sub-issues da SPEC andar durante a execução; a **SPEC** (ou a issue sem tickets) fecha no merge, pelo `Closes #N` do corpo do PR. Por isso `in-review` só aparece em SPEC ou issue sem tickets: um ticket vai de `in-progress` direto para fechado. A review da unidade é parte do loop e não ganha label própria. Em `risk:alto`, `in-review` só entra depois da skill `code-review` numa sessão nova.
+- **Não existe label de "concluída".** Issue fechada já é essa informação. Uma label `done` duplica o que o tracker já sabe e exige alguém para mantê-la — é mais um estado para desincronizar. Quem fecha depende do que a issue é: o **ticket** é fechado pelo `implement` assim que o revisor aprova, e é isso que faz o progresso de sub-issues da SPEC andar durante a execução; a **SPEC** (ou a issue sem tickets) fecha no merge, pelo `Closes #N` do corpo do PR. Por isso `in-review` só aparece em SPEC ou issue sem tickets: um ticket vai de `in-progress` direto para fechado. A review é parte do loop e não ganha label própria.
 
 Este é o **único** vocabulário de labels do pipeline. Nenhum agente define o seu próprio — `implement` e `reviewer` leem daqui.
 
@@ -273,7 +273,7 @@ Bloqueio entre tickets: seção `## Blocked by` do corpo — fonte única, sem r
 
 `needs-prototype`: o `/prototype <N>` lê a issue e `docs/agents/prototype.md`, altera o artifact indicado com as decisões da issue e fica aberto para o usuário ajustar o protótipo pelo chat da sessão. Sem link em `docs/agents/prototype.md`, o `/prototype` cria antes o protótipo inicial a partir do `docs/prd.md`. O `/close-prototype`, na mesma sessão, fecha a etapa.
 
-Modelo por sessão: grill, `/to-prd`, `/to-spec` e `/to-tickets` com `claude-sonnet-5-5`; protótipo com `claude-opus-5-5` e `--effort medium`; `/implement` e `/code-review` com `claude-opus-5-5`. Uma SPEC vira uma branch e um PR só, aberto pelo `/implement`; a sessão do `/to-spec` não implementa. Em `risk:alto`, o merge espera `/code-review` numa sessão nova.
+Modelo por sessão: grill, `/to-prd`, `/to-spec` e `/to-tickets` com `claude-sonnet-5-5`; protótipo com `claude-opus-5-5` e `--effort medium`; `/implement` com `claude-opus-5-5`. Uma SPEC vira uma branch e um PR só, aberto pelo `/implement`; a sessão do `/to-spec` não implementa.
 ```
 
 **Arquivo de instruções** — bloco resumido:
@@ -400,9 +400,12 @@ Rode cada comando uma vez e cronometre — inclusive o `clean`. Você precisa do
 - build: `<comando>`
 - test: `<comando>`
 - clean: `<comando>`   ← opcional
+- adversarial: `<comando>` — rodam em: <ambiente>
 ```
 
-Cinco labels, uma seção. **Não crie seções separadas para "CI" e "testes"** — a divisão faz o agente escolher qual ler, e escolha errada aqui produz um gate que passa sem ter rodado nada.
+O `adversarial` roda os testes adversariais que o `implement` escreve a partir da SPEC. Pergunte ao usuário só onde eles rodam (ex.: um banco de teste) e grave a linha como `- adversarial: (sem comando ainda) — rodam em: <ambiente>`. O comando entra no commit que cria os primeiros testes; daí em diante, como todo label, vira passo da CI (Parte 7).
+
+Seis labels, uma seção. **Não crie seções separadas para "CI" e "testes"** — a divisão faz o agente escolher qual ler, e escolha errada aqui produz um gate que passa sem ter rodado nada.
 
 Se algum label não existir neste stack (projeto sem typecheck, por exemplo), omita a linha. Os agentes rodam os labels que existem, e o `clean` ausente só significa que o passo de limpeza é pulado — nada quebra.
 
@@ -432,7 +435,7 @@ Ao chegar num entendimento compartilhado de uma mudança, recomende uma das trê
 - Muda contrato público, ou o registro rastreado importa → `/to-spec` (a sessão do `/to-spec` não implementa; a SPEC vira uma branch e um PR só, no `/implement`).
 - Mais de uma SPEC prevista → `/to-prd` antes.
 
-Recomende, não decida — a escolha é do usuário. Em qualquer das três, branch e PR sempre — e uma SPEC não se fragmenta em vários PRs. Issue ou PR `risk:alto` ainda passa por `/code-review` numa sessão nova antes do merge.
+Recomende, não decida — a escolha é do usuário. Em qualquer das três, branch e PR sempre — e uma SPEC não se fragmenta em vários PRs.
 ```
 
 Confirme o critério com o usuário antes de gravar: o limiar entre "implementa direto" e "vira SPEC" é dele, não seu.
@@ -645,7 +648,7 @@ Ao finalizar, informe:
 > **Tracker:** [tracker] — labels criadas: [lista]. Detalhe em `docs/agents/issue-tracker.md`.
 > **Protótipo:** `docs/agents/prototype.md` [com link | sem link — criado no protótipo inicial (`/prototype`) | já existia].
 > **Decisões de tela:** `docs/telas/README.md` [criado, mapa vazio — os arquivos de cada tela nascem no `/close-prototype` | já existia].
-> **Commands:** [lint [Ns] · typecheck [Ns] · test [Ns] · build [Ns] · clean [Ns | não declarado] | sem labels — repo sem manifesto; a unidade que criar o manifesto os declara]
+> **Commands:** [lint [Ns] · typecheck [Ns] · test [Ns] · build [Ns] · clean [Ns | não declarado] · adversarial [onde rodam | não declarado] | sem labels — repo sem manifesto; a unidade que criar o manifesto os declara]
 > **Fluxo:** gravado no arquivo de instruções.
 > **Remote:** [URL].
 > **Arquitetura:** `docs/agents/architecture.md` [gerado | esqueleto — repo sem código | já existia].

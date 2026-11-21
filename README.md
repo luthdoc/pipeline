@@ -23,7 +23,7 @@ Depois, uma vez por projeto, rode a skill `setup-project`.
 ## Fluxo
 
 ```
-to-prd  →  prototype + close-prototype (protótipo inicial)  →  to-spec  →  to-tickets (se não couber numa janela)  →  implement  →  code-review (se risk:alto)
+to-prd  →  prototype + close-prototype (protótipo inicial)  →  to-spec  →  to-tickets (se não couber numa janela)  →  implement
 ```
 
 Pelos rótulos de uma issue — a segunda linha é a da issue que mexe no que o usuário vê:
@@ -37,13 +37,12 @@ needs-triage  →  grill-with-issues  →  needs-prototype  →  prototype <N>  
 |---|---|
 | `setup-project` | Configura o repo: tracker, labels, `## Commands`, `## Fluxo`, remote, template de PR, CI, rótulos de risco. Uma vez por projeto. |
 | `to-prd` | Escreve `docs/prd.md` — requisitos e a lista de SPECs. |
-| `to-spec` | Transforma a conversa numa SPEC publicada no tracker. A sessão não implementa e não abre PR. |
+| `to-spec` | Transforma a conversa numa SPEC publicada no tracker, com a seção "O que nunca pode quebrar". A sessão não implementa e não abre PR. |
 | `to-tickets` | Fatia uma SPEC em tickets verticais com dependências. |
 | `grill-with-issues` | Entrevista sobre uma issue, reescreve como ticket e roteia: `needs-prototype` se mexe no que o usuário vê; senão `ready-for-agent` ou `needs-spec`. |
 | `prototype` | Abre a sessão do protótipo e descobre o momento pelo repo: sem link em `docs/agents/prototype.md`, cria o protótipo inicial a partir do PRD; com link e uma issue `needs-prototype`, altera o artifact existente. |
 | `close-prototype` | Fecha a sessão do protótipo. No inicial, grava nome e link em `docs/agents/prototype.md` e cria o arquivo de decisões de cada tela em `docs/telas/`. Na alteração, junta issue e protótipo, confirma, grava as decisões na branch da SPEC (sem PR próprio), reescreve a issue como ticket citando os IDs e troca `needs-prototype` por `ready-for-agent` ou `needs-spec`. |
-| `implement` | Loop implementar → revisar → corrigir → re-revisar. Uma SPEC vira uma branch e um PR só. O PR sai com risco, gates e como desfazer. |
-| `code-review` | Revisão de segurança em sessão nova para `risk:alto`: confronta SPEC × diff com o checklist S1–S5, antes do `in-review` e do merge. Não altera código. |
+| `implement` | Testes adversariais escritos a partir da SPEC, antes do código; depois o loop implementar → revisar → corrigir → re-revisar. Uma SPEC vira uma branch e um PR só. O PR sai com risco, gates e como desfazer. |
 
 ## Modelo por etapa
 
@@ -54,7 +53,6 @@ Para controlar o uso de tokens, cada sessão abre com o modelo da etapa. No Clau
 | `grill-me` / `grill-with-issues`, `to-prd`, `to-spec`, `to-tickets` | `claude-sonnet-5-5` | padrão |
 | Sessão do protótipo (`/prototype`, até o `/close-prototype`) | `claude-opus-5-5` | `medium` |
 | `implement` | `claude-opus-5-5` | padrão |
-| `code-review` (sessão nova, `risk:alto`) | `claude-opus-5-5` | padrão |
 
 O modelo vale para a sessão inteira, por isso entra no comando que a abre, e não no frontmatter da skill.
 
@@ -65,8 +63,6 @@ Nunca force push. Se a branch da sessão foi apagada no merge, crie uma branch c
 ## Uma SPEC, uma branch, um PR
 
 A sessão do `/to-spec` não implementa. A implementação de uma SPEC sai num único PR do `/implement`, na única branch da SPEC. Decisões de tela (na alteração), docs e chore que pertençam à SPEC entram como commits nessa branch, não em PRs paralelos — um PR de docs à parte, aberto no meio da SPEC, foi o que gerou conflito com o PR da implementação. PR de documentação à parte só fora de uma SPEC aberta.
-
-Toda issue ou PR com o rótulo `risk:alto` passa, antes do `in-review` e do merge, por uma revisão de segurança da skill `code-review` numa **sessão nova** (contexto limpo, não a que implementou). O autorreview na sessão do `/implement` continua para o resto, e a passada de segurança daquela sessão segue como primeiro filtro.
 
 ## Escopo pequeno: commit direto na main
 
@@ -95,8 +91,9 @@ Nos dois momentos, os ajustes vêm pelo chat da sessão: comentário deixado no 
 Os agentes vivem dentro da skill `implement`, como prompts em markdown puro — sem frontmatter de nenhuma ferramenta:
 
 - `implement/SKILL.md` — o orquestrador. Roda na sessão principal.
+- `implement/adversario.md` — lê só a SPEC e escreve testes que tentam quebrá-la, antes do código.
 - `implement/implementer.md` — implementa via TDD, roda os gates, commita.
-- `implement/reviewer.md` — revisa sem ver as notas do implementador.
+- `implement/reviewer.md` — revisa sem ver as notas do implementador: lê o que o diff afeta e roda os testes.
 - `implement/review-rules.md` — os critérios universais da review.
 
 Cada worker roda num subagente novo, com contexto limpo. Em ferramenta sem subagentes, a fase roda em sequência na própria sessão.

@@ -1,12 +1,12 @@
 # Regras de Review
 
-Todo critério aqui é **verificável por leitura**. O revisor não executa nada — lint, typecheck, build e a suite de testes já rodaram no gate do `implementer`, e o que estas regras cobrem é justamente o que essas ferramentas não pegam.
+Todo critério aqui é **verificável por leitura** ou pelos labels `test` e `adversarial`, que o revisor roda. Lint, typecheck e build já rodaram no gate do `implementer`.
 
 ## Regra de admissão de critério
 
-Um critério só pertence a este arquivo se o revisor puder julgá-lo **lendo o diff e o código**. Duas classes ficam de fora, por construção:
+Um critério só pertence a este arquivo se o revisor puder julgá-lo **lendo o código ou rodando `test` e `adversarial`**. Duas classes ficam de fora, por construção:
 
-1. **Critério que exige executar algo** não é do revisor. Ele não executa nada. Se algo precisa rodar, é label de `## Commands` — e o resultado chega colado no retorno do worker que o executou — ou é passo da CI. Um critério que manda o revisor rodar um comando só pode produzir duas coisas: achado inventado ou omissão silenciosa.
+1. **Critério que exige executar outra coisa** não é do revisor. Se algo mais precisa rodar, é label de `## Commands` — e o resultado chega colado no retorno do worker que o executou — ou é passo da CI. Um critério que manda o revisor rodar um comando só pode produzir duas coisas: achado inventado ou omissão silenciosa.
 2. **Prática que só o autor pode atestar** não é critério de review. "Escreveu o teste antes do código" não é observável num diff — o diff mostra o resultado, não a ordem em que foi digitado. Isso é regra do worker que faz, e mora no `implementer.md`.
 
 Numa equipe real ninguém pede ao revisor que rode `npm audit`, e ninguém audita se o autor escreveu o teste primeiro. As duas regras estão no papel errado.
@@ -15,7 +15,7 @@ Numa equipe real ninguém pede ao revisor que rode `npm audit`, e ninguém audit
 
 O revisor aponta a **classe** do bug, não só a linha. Quem corrige é o `implementer`, e a correção cobre todas as ocorrências daquela classe nos arquivos que o diff toca. O formato (`CLASSE`, `CORRIGIR`, `OUTRAS`) está no `reviewer.md`. Arquivo que o diff não toca não entra na varredura.
 
-Todo CRITICAL e todo WARN volta com resposta: `corrigido`, ou `recusado` com motivo. A resposta vai para `## Achados do revisor` no corpo do PR. Resposta faltando conta como pendente. NIT não abre rodada e não vira ticket; a resposta registrada no PR é `recusado: NIT — não entra no loop de correção`. O teto de rodadas da unidade continua 2. A passada de segurança de um PR `risk:alto` é um ciclo à parte, S1–S5, e não sobe esse teto. Em `risk:alto`, o merge ainda espera a revisão da skill `code-review` numa sessão nova.
+Todo achado, NIT inclusive, volta com resposta: `corrigido`, ou `recusado` com motivo que a re-review aceita. Nenhum é descartado por conta própria: o que sobra depois do teto de 2 rodadas chega ao usuário. A resposta vai para `## Achados do revisor` no corpo do PR. Resposta faltando conta como pendente. A passada de segurança de um PR `risk:alto` é um ciclo à parte, só S1–S4, e não sobe esse teto.
 
 ## Bug que escapa vira regra
 
@@ -41,7 +41,7 @@ Critérios de stack, de framework ou de design system não moram aqui — valem 
 
 Reporte só achados com evidência concreta — `arquivo:linha` mais o trecho que sustenta. Suspeita sem evidência não é achado.
 
-Escopo: **o que o diff mudou**. Dívida pré-existente que o diff apenas tangenciou é NIT, nunca bloqueio deste ticket.
+Escopo: **o que o diff mudou e o que ele afeta** — o código existente que chama, protege ou depende do que mudou, mesmo fora do diff. Dívida pré-existente que o diff não afeta é NIT, com resposta como todo achado.
 
 **Marque risco alto.** Para cada CRITICAL, diga se ele é de risco alto — segurança ou perda de dado. É a classificação que decide o destino do achado se ele sobreviver a duas rodadas de correção. Não é o rótulo `risk:*` do PR: esse sai dos caminhos do diff, e quem calcula é o orquestrador.
 
@@ -105,21 +105,7 @@ return await db.users.findById(id);
 return await db.users.findById(id, { select: ['id', 'name', 'email'] });
 ```
 
----
-
-## S5 — Filtro de origem e fronteira de confiança
-
-**Regra:** evento, webhook, mensagem ou requisição que declara vir de uma origem específica (número, conta, tenant, loja, app, assinatura de webhook) só é processado depois de a origem ser conferida contra a origem esperada. Aceitar evento de outro número, outro tenant ou outra fonte é achado CRITICAL.
-
-**Por quê:** um defeito desta classe passou pelo revisor da mesma sessão que implementou (filtro de webhook que aceitava eventos de outros números). Verificação de autenticação no servidor (S3) não cobre sozinha o recorte de origem: o pedido pode estar autenticado e mesmo assim ser de outra conta.
-
-**Como checar:** para cada ponto de entrada que recebe evento externo ou opera sobre um recurso alheio, verifique no diff se a origem (número, `from`, tenant, `account_id`, loja, canal) é filtrada ou autorizada antes do processamento, e se o teste cobre o caso de origem errada. Ausência de filtro onde o contrato da SPEC ou dos ACs limita a origem é CRITICAL.
-
-**O que fazer se falhar:** recuse ou descarte o evento cuja origem não é a esperada, antes de qualquer efeito colateral, e cubra com teste o caso negativo.
-
----
-
-> **Vulnerabilidade de dependência não é critério de review.** Ela exige executar `npm audit`, e o revisor não executa nada — cai na regra de admissão. Vive na CI (`.github/workflows/ci.yml`), que o `setup-project` grava e que roda `npm audit --audit-level=high` num checkout limpo, em todo PR de projeto Node. `high` falha o job em vulnerabilidade alta ou crítica; `moderate` fica de fora para o aviso transitivo sem correção não pintar todo PR de vermelho. O lugar é esse por um motivo mais forte que a ferramenta: vulnerabilidade não aparece porque alguém mexeu no manifesto, aparece porque alguém publicou um aviso sobre um pacote que já estava lá. Um gate condicional ao diff nunca pegaria o caso comum.
+> **Vulnerabilidade de dependência não é critério de review.** Ela exige executar `npm audit`, que não é `test` nem `adversarial` — cai na regra de admissão. Vive na CI (`.github/workflows/ci.yml`), que o `setup-project` grava e que roda `npm audit --audit-level=high` num checkout limpo, em todo PR de projeto Node. `high` falha o job em vulnerabilidade alta ou crítica; `moderate` fica de fora para o aviso transitivo sem correção não pintar todo PR de vermelho. O lugar é esse por um motivo mais forte que a ferramenta: vulnerabilidade não aparece porque alguém mexeu no manifesto, aparece porque alguém publicou um aviso sobre um pacote que já estava lá. Um gate condicional ao diff nunca pegaria o caso comum.
 
 ---
 
@@ -460,9 +446,9 @@ Evidência de que o buraco é real: a seção "C1 + C6 em conjunto", acima, já 
 1. **Todo smell é julgamento, nunca violação dura.** Escreva "possível Feature Envy", não "viola Feature Envy". Um smell é um convite a olhar, não um veredito.
 2. **Padrão documentado do repo vence o smell.** Se `docs/agents/architecture.md` ou o documento de design do projeto estabelecem o padrão que você ia apontar, não é achado — é a arquitetura, e questioná-la é assunto de outra conversa, não desta review.
 3. **Pule o que a ferramenta já pega.** `lint` e `typecheck` rodaram no gate. Não reporte o que eles reportariam.
-4. **Severidade: NIT, todos os dez.** Inclusive SM1. NIT vai para o corpo do PR e morre lá — **NIT não vira ticket**, não há limiar nem contador. O motivo é evitar churn automático em cima de julgamento: um achado que é uma opinião defensável não deve gerar trabalho sozinho.
+4. **Severidade: NIT, todos os dez.** Inclusive SM1. Como todo achado, entra na rodada de correção e volta com resposta; recusar com motivo ("padrão do repo", "opinião defensável") é resposta válida e barata.
 
-> **Consequência aceita:** sem ferramenta de detecção de duplicação, SM1 só é pego quando você repara — e, como NIT, não é consertado automaticamente. É a opção mais barata, e é reversível.
+> **Consequência aceita:** sem ferramenta de detecção de duplicação, SM1 só é pego quando você repara.
 
 ## SM1 — Código duplicado
 

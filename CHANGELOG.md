@@ -1,13 +1,14 @@
 # Changelog
 
-## 0.12.0 — 2026-11-13
+## 0.12.0 — 2026-11-20
 
-- **Uma SPEC = uma branch = um PR.** A sessão do `/to-spec` não implementa e não abre PR. A implementação sai num único PR do `/implement`, na branch da SPEC. Decisões de tela (na alteração do `/close-prototype`), docs e chore que pertençam à SPEC entram como commits nessa branch, não em PRs paralelos. PR de docs à parte só fora de uma SPEC aberta. A regra de escopo pequeno também não se aplica a arquivo de uma SPEC aberta. Motivo: uma família de SPEC saiu em 6 PRs (docs/chore numa branch, implementação noutra); o PR da implementação conflitou com o de docs, e tickets fecharam antes do merge.
-- **Revisão de segurança em sessão nova para `risk:alto`.** Skill nova `code-review`: confronta SPEC × diff com o checklist S1–S5 (segredos, input, autenticação e RLS, dados mínimos, filtro de origem) numa sessão com contexto limpo, não a que implementou. O `/implement` abre o PR, não move para `in-review` e pede essa sessão. O autorreview na sessão do `/implement` continua, e a passada de segurança daquela sessão segue como primeiro filtro, agora em S1–S5. Dispara se o PR for classificado `risk:alto` ou se a issue/SPEC (ou um ticket dela) já carregar o rótulo.
-- **S5 em `review-rules.md`:** filtro de origem e fronteira de confiança. Evento, webhook ou requisição só é processado depois de a origem esperada ser conferida. Motivo: o revisor da mesma sessão aprovou um PR em que o filtro aceitava eventos de outros números.
-- **`close-prototype` na alteração:** grava as decisões na branch da SPEC e não abre PR próprio.
-- README, `to-tickets`, `setup-project` (modelo por etapa e descrição de `in-review`) e o fluxograma acompanham.
+A revisão passa a achar a falha antes, em vez de descartá-la. No #129 e no #176 (maluall-app), o revisor independente viu as falhas e as marcou como NIT, ou elas estavam fora do diff.
 
+- **SPEC com "O que nunca pode quebrar".** O `/to-spec` gera uma seção curta: quem pode fazer o quê e as regras que não podem ser violadas.
+- **Testes adversariais antes do código.** O `/implement` abre o worker novo `adversario.md`, que lê só a SPEC e escreve testes que tentam quebrar cada linha dessa seção. Eles rodam no label `adversarial` (local e CI). Ataque que funciona impede o PR de abrir.
+- **Revisor:** roda numa sessão nova, lê o código que o diff afeta (não só o diff), roda `test` e `adversarial`, e não descarta achado: NIT entra na correção como os outros; o que sobra chega ao usuário.
+- **Uma SPEC = uma branch = um PR.** `/to-spec` não implementa; decisões de tela da alteração (`/close-prototype`), docs e chore da SPEC vão na branch dela.
+- **`/setup-project`:** uma linha `adversarial` em `## Commands` dizendo onde esses testes rodam.
 
 ## 0.11.0 — 2026-11-11
 

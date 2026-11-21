@@ -69,7 +69,7 @@ After publishing, show the user the breakdown in plain product language — one 
 
 **Single trigger for automations.** `ready-for-agent` on a ticket that has a parent spec does not start a session of its own: the automation resolves the parent and runs `/implement <parent>` once, and `implement` works the frontier. That is why the tickets carry the label (they are what `/implement` lists) while the spec never does after slicing.
 
-Apart from that label, do NOT close or modify the parent issue. From here on the spec's label is a mirror that `implement` moves (`in-progress` when the first ticket starts, `in-review` when the PR opens — or, on `risk:alto`, when the new-session `/code-review` approves).
+Apart from that label, do NOT close or modify the parent issue. From here on the spec's label is a mirror that `implement` moves (`in-progress` when the first ticket starts, `in-review` when the PR opens).
 
 <local-ticket-template>
 
