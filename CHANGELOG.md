@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0 — 2026-11-20
+
+A revisão passa a achar a falha antes, em vez de descartá-la. No #129 e no #176 (maluall-app), o revisor independente viu as falhas e as marcou como NIT, ou elas estavam fora do diff.
+
+- **SPEC com "O que nunca pode quebrar".** O `/to-spec` gera uma seção curta: quem pode fazer o quê e as regras que não podem ser violadas.
+- **Testes adversariais antes do código.** O `/implement` abre o worker novo `adversario.md`, que lê só a SPEC e escreve testes que tentam quebrar cada linha dessa seção. Eles rodam no label `adversarial` (local e CI). Ataque que funciona impede o PR de abrir.
+- **Revisor:** roda numa sessão nova, lê o código que o diff afeta (não só o diff), roda `test` e `adversarial`, e não descarta achado: NIT entra na correção como os outros; o que sobra chega ao usuário.
+- **Uma SPEC = uma branch = um PR.** `/to-spec` não implementa; decisões de tela da alteração (`/close-prototype`), docs e chore da SPEC vão na branch dela.
+- **`/setup-project`:** uma linha `adversarial` em `## Commands` dizendo onde esses testes rodam.
+
 ## 0.11.0 — 2026-11-11
 
 - **Decisões de tela em `docs/telas/`, fonte da verdade da tela.** Cada tela tem um arquivo de decisões no repo do projeto, e o protótipo e o código derivam dele: quem diverge do arquivo está errado. Cada decisão tem ID por tela (`PDV-07`), decisão, por quê, origem, estado (`vale` ou `substituída por`) e "Aplicada em" (protótipo, código), que mostra o que falta corrigir de cada lado. Decisão que muda ganha ID novo, e a antiga passa a `substituída por`. Tokens e componentes continuam no design doc; regras de negócio, no `docs/prd.md`.

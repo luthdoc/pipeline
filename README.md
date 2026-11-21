@@ -37,12 +37,12 @@ needs-triage  →  grill-with-issues  →  needs-prototype  →  prototype <N>  
 |---|---|
 | `setup-project` | Configura o repo: tracker, labels, `## Commands`, `## Fluxo`, remote, template de PR, CI, rótulos de risco. Uma vez por projeto. |
 | `to-prd` | Escreve `docs/prd.md` — requisitos e a lista de SPECs. |
-| `to-spec` | Transforma a conversa numa SPEC publicada no tracker. |
+| `to-spec` | Transforma a conversa numa SPEC publicada no tracker, com a seção "O que nunca pode quebrar". A sessão não implementa e não abre PR. |
 | `to-tickets` | Fatia uma SPEC em tickets verticais com dependências. |
 | `grill-with-issues` | Entrevista sobre uma issue, reescreve como ticket e roteia: `needs-prototype` se mexe no que o usuário vê; senão `ready-for-agent` ou `needs-spec`. |
 | `prototype` | Abre a sessão do protótipo e descobre o momento pelo repo: sem link em `docs/agents/prototype.md`, cria o protótipo inicial a partir do PRD; com link e uma issue `needs-prototype`, altera o artifact existente. |
-| `close-prototype` | Fecha a sessão do protótipo. No inicial, grava nome e link em `docs/agents/prototype.md` e cria o arquivo de decisões de cada tela em `docs/telas/`. Na alteração, junta issue e protótipo, confirma, grava as decisões em `docs/telas/`, reescreve a issue como ticket citando os IDs e troca `needs-prototype` por `ready-for-agent` ou `needs-spec`. |
-| `implement` | Loop implementar → revisar → corrigir → re-revisar, com branch e PR. O PR sai com risco, gates e como desfazer. |
+| `close-prototype` | Fecha a sessão do protótipo. No inicial, grava nome e link em `docs/agents/prototype.md` e cria o arquivo de decisões de cada tela em `docs/telas/`. Na alteração, junta issue e protótipo, confirma, grava as decisões na branch da SPEC (sem PR próprio), reescreve a issue como ticket citando os IDs e troca `needs-prototype` por `ready-for-agent` ou `needs-spec`. |
+| `implement` | Testes adversariais escritos a partir da SPEC, antes do código; depois o loop implementar → revisar → corrigir → re-revisar. Uma SPEC vira uma branch e um PR só. O PR sai com risco, gates e como desfazer. |
 
 ## Modelo por etapa
 
@@ -60,9 +60,13 @@ O modelo vale para a sessão inteira, por isso entra no comando que a abre, e n�
 
 Nunca force push. Se a branch da sessão foi apagada no merge, crie uma branch com nome novo a partir da `origin/main` atualizada.
 
+## Uma SPEC, uma branch, um PR
+
+A sessão do `/to-spec` não implementa. A implementação de uma SPEC sai num único PR do `/implement`, na única branch da SPEC. Decisões de tela (na alteração), docs e chore que pertençam à SPEC entram como commits nessa branch, não em PRs paralelos — um PR de docs à parte, aberto no meio da SPEC, foi o que gerou conflito com o PR da implementação. PR de documentação à parte só fora de uma SPEC aberta.
+
 ## Escopo pequeno: commit direto na main
 
-Mudança só de texto ou documentação (`.md` e comentários), com até uns 30 linhas e sem código, CI, config nem migration, não abre PR. O agente mostra o diff ao usuário, espera o OK e commita direto na `main`. Todo o resto segue por branch e PR.
+Mudança só de texto ou documentação (`.md` e comentários), com até uns 30 linhas e sem código, CI, config nem migration, não abre PR. O agente mostra o diff ao usuário, espera o OK e commita direto na `main`. Todo o resto segue por branch e PR. A regra **não se aplica** a arquivo que pertence a uma SPEC aberta: ele vai na branch da SPEC, no único PR do `/implement`.
 
 ## Protótipo
 
@@ -77,7 +81,7 @@ O artifact e o código não guardam o porquê de nada, e um não serve para corr
 
 - **Formato** — cada decisão tem ID por tela (`PDV-07`), decisão, por quê, origem, estado (`vale` ou `substituída por`) e onde já está aplicada (protótipo, código). Decisão que muda não é editada: ganha ID novo, e a antiga passa a `substituída por`.
 - **Mapa** — `docs/telas/README.md` lista cada tela com o arquivo, o prefixo de ID e as rotas e componentes que ela cobre. É por ele que o revisor sabe a qual tela um arquivo do diff pertence.
-- **Quem escreve** — o `setup-project` cria o README com o mapa vazio. O `/close-prototype` grava as decisões aprovadas (no inicial, cria o arquivo de cada tela), com "protótipo: sim, código: não". O `implementer` preenche as rotas e componentes no mapa e marca "código: sim" no mesmo commit que aplica a decisão.
+- **Quem escreve** — o `setup-project` cria o README com o mapa vazio. O `/close-prototype` grava as decisões aprovadas (no inicial, cria o arquivo de cada tela e pode ir à `main` ou a um PR próprio, porque ainda não há SPEC; na alteração, commita na branch da SPEC, sem PR próprio), com "protótipo: sim, código: não". O `implementer` preenche as rotas e componentes no mapa e marca "código: sim" no mesmo commit que aplica a decisão.
 - **Quem lê** — o `/prototype` antes de alterar o artifact, o `implementer` antes de mexer em UI, e o revisor, que cobra pela CL7.
 
 Nos dois momentos, os ajustes vêm pelo chat da sessão: comentário deixado no artifact não chega a ela.
@@ -87,8 +91,9 @@ Nos dois momentos, os ajustes vêm pelo chat da sessão: comentário deixado no 
 Os agentes vivem dentro da skill `implement`, como prompts em markdown puro — sem frontmatter de nenhuma ferramenta:
 
 - `implement/SKILL.md` — o orquestrador. Roda na sessão principal.
+- `implement/adversario.md` — lê só a SPEC e escreve testes que tentam quebrá-la, antes do código.
 - `implement/implementer.md` — implementa via TDD, roda os gates, commita.
-- `implement/reviewer.md` — revisa sem ver as notas do implementador.
+- `implement/reviewer.md` — revisa sem ver as notas do implementador: lê o que o diff afeta e roda os testes.
 - `implement/review-rules.md` — os critérios universais da review.
 
 Cada worker roda num subagente novo, com contexto limpo. Em ferramenta sem subagentes, a fase roda em sequência na própria sessão.

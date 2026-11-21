@@ -46,7 +46,7 @@ Give each ticket its **blocking edges** — the other tickets that must complete
 
 ### 4. Decide the breakdown yourself
 
-Granularity, blocking edges, merging and splitting are yours to decide — do not quiz the user on them. They are code and context-window decisions, the owner may not read code, and they have no product effect: the PR opens only when the whole spec closes, so every ticket ships together regardless of how it was sliced. The pipeline escalates only product and risk decisions to a human.
+Granularity, blocking edges, merging and splitting are yours to decide — do not quiz the user on them. They are code and context-window decisions, the owner may not read code, and they have no product effect: the SPEC becomes exactly one branch and one PR, opened by `/implement` only when the whole spec closes, so every ticket — and any docs, chore or screen decisions that belong to the SPEC — ships together, regardless of how it was sliced. This skill does not implement and does not open a PR. The pipeline escalates only product and risk decisions to a human.
 
 Check each ticket against the vertical-slice rules above, and each edge against "does this ticket genuinely need that one's code to exist first?". Then publish.
 

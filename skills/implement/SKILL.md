@@ -2,7 +2,8 @@
 name: implement
 description: >
   Roda o loop de implementação — implementar → revisar → corrigir → re-revisar —
-  sobre uma unidade de trabalho, e abre branch e PR ao final. Aceita uma issue com
+  sobre uma unidade de trabalho, com testes adversariais escritos antes do código,
+  e abre uma branch e um PR ao final (uma SPEC vira um PR só). Aceita uma issue com
   ready-for-agent, uma SPEC (com ou sem tickets), um caminho de arquivo, ou o
   entendimento acordado num grill. Use: /implement 12, /implement (após um grill),
   ou sem argumento para escolher entre as issues prontas.
@@ -13,7 +14,7 @@ disable-model-invocation: true
 
 Você é o **orquestrador** do loop de implementação. Gerencia estado, abre workers, persiste evidência. **Nunca toca código de produção**: toda mudança de arquivo passa pelo `implementer` — exceção: os artefatos regenerados depois de aplicar uma migração autorizada. O que você executa é git, tracker, a medição de baseline do Bootstrap e, com autorização do usuário, a aplicação em produção com a regeneração do que ela exige (ver "Aplicar em produção"), nada mais.
 
-O pipeline tem **três papéis**: você, o `implementer` e o `reviewer`. Não existe um quarto papel de correção — quando o revisor devolve achados, quem os resolve é o `implementer`, recebendo a lista de achados como peça de trabalho.
+O pipeline tem **quatro papéis**: você, o `adversario`, o `implementer` e o `reviewer`. Não existe papel de correção — quando o revisor devolve achados, quem os resolve é o `implementer`, recebendo a lista de achados como peça de trabalho.
 
 ## Os workers
 
@@ -21,11 +22,12 @@ Os prompts dos workers moram **nesta pasta**, ao lado deste arquivo:
 
 | Arquivo | Papel |
 |---|---|
+| `adversario.md` | escreve, só a partir da SPEC, testes que tentam quebrá-la |
 | `implementer.md` | implementa via TDD, roda os gates, commita |
-| `reviewer.md` | revisa de forma independente, só lendo |
+| `reviewer.md` | revisa de forma independente, lendo e rodando os testes |
 | `review-rules.md` | critérios universais da review, lidos pelo revisor |
 
-**Abrir um worker** significa: abrir um **subagente novo, com contexto limpo**, cujo prompt é o conteúdo do arquivo do papel mais o que cada passo abaixo manda passar. Passe o **caminho absoluto** do arquivo — o subagente não sabe onde esta skill está instalada — e a **raiz absoluta do repositório**: é onde ele roda comandos e acha o arquivo de instruções. O subagente pode herdar outro diretório de trabalho da sessão, e aí rodaria gates e `git add` no lugar errado. Se a sua ferramenta não informa a pasta desta skill, localize-a buscando `skills/implement/implementer.md` a partir da raiz do repo, incluindo pastas ocultas. Se a ferramenta deixar escolher o modelo do subagente, use o mais capaz disponível para os dois workers.
+**Abrir um worker** significa: abrir um **subagente novo, com contexto limpo** — uma sessão nova, sem o histórico desta —, cujo prompt é o conteúdo do arquivo do papel mais o que cada passo abaixo manda passar. Passe o **caminho absoluto** do arquivo — o subagente não sabe onde esta skill está instalada — e a **raiz absoluta do repositório**: é onde ele roda comandos e acha o arquivo de instruções. O subagente pode herdar outro diretório de trabalho da sessão, e aí rodaria gates e `git add` no lugar errado. Se a sua ferramenta não informa a pasta desta skill, localize-a buscando `skills/implement/implementer.md` a partir da raiz do repo, incluindo pastas ocultas. Se a ferramenta deixar escolher o modelo do subagente, use o mais capaz disponível; o revisor pode usar outro modelo, se for mais barato.
 
 **Ferramenta sem subagentes:** execute a fase você mesmo, em sequência, seguindo o arquivo do papel à risca. Enquanto executa a fase do `implementer`, a regra "nunca toca código de produção" fica suspensa — você é o implementador naquela fase. **A independência do revisor se perde:** o raciocínio de quem implementou já está no seu contexto, e nenhuma disciplina de leitura o apaga. Revise mesmo assim, a partir do diff e do requisito, e **declare no corpo do PR** que a review não foi independente, porque a ferramenta não abre subagentes.
 
@@ -122,6 +124,8 @@ Recriar da `main` faz o trabalho dos tickets irmãos sumir do diff, e o `impleme
 
 **Branch e PR sempre**, inclusive sem tracker — é o que mantém o controle de versão.
 
+**Uma SPEC, uma branch, um PR.** A SPEC inteira — tickets, decisões de tela, docs e chore que pertençam a ela — entra como commits nessa única branch e sai num único PR, aberto por esta skill quando a SPEC fecha. Não abra um segundo PR (de docs, chore ou decisões de tela) para a mesma SPEC: foi isso que fragmentou uma família em vários PRs, gerou conflito e fechou tickets antes do merge. PR de documentação à parte só para trabalho fora de qualquer SPEC aberta. A regra de escopo pequeno (commit direto na `main`) não vale para arquivo de uma SPEC aberta.
+
 ### 3. `clean` e baseline
 
 Depois do checkout e **antes de abrir qualquer worker**:
@@ -147,6 +151,16 @@ Depois do checkout e **antes de abrir qualquer worker**:
    Se o usuário mandar seguir → siga, e registre no corpo do PR que a baseline já estava vermelha e o que estava vermelho.
 
 Esta é a **única** vez que você roda os gates. Durante o Loop, não: o resultado por label vem no retorno do worker que os executou.
+
+### 4. Testes adversariais
+
+Uma vez por SPEC, antes do primeiro ticket. Leia `## O que nunca pode quebrar` na SPEC (a da unidade, ou a do pai). Pule este passo se a seção diz "Nada novo", se não existe (SPEC anterior à regra — registre no PR) ou se a branch já tem o commit `test(...): testes adversariais da SPEC` (retomada).
+
+Sem o label `adversarial` em `## Commands`: ENCERRA pedindo `/setup-project` — sem ele ninguém sabe onde os testes rodam.
+
+Abra o worker `adversario.md` passando só: o caminho da cópia da SPEC (ou o número da issue), a branch e a raiz do repositório. Nada do código da unidade e nenhuma nota sua: quem ataca não pode ter visto a implementação. Sem retorno `ESCRITO`: Protocolo de Bloqueio.
+
+Os testes nascem vermelhos, porque a feature ainda não existe. Eles são contrato do `implementer`, como os acceptance criteria, e ele não os altera.
 
 ---
 
@@ -193,11 +207,11 @@ Com tracker, mova para `in-progress` — **removendo o estado anterior na mesma 
 
 **Registre a base da unidade** antes de abrir o worker: `git rev-parse HEAD`. É dela que sai o diff do passo 3. Ao **retomar** uma unidade em `in-progress` (numa sessão nova, sem a base na memória), a base é o pai do commit mais antigo da unidade: liste com `git log main..HEAD --format=%H --grep="(#N)"` e use `<hash mais antigo>~1`; se não houver commit com `(#N)`, a base é o `HEAD` atual.
 
-Abra o worker `implementer.md`, passando: referência e título da unidade, o corpo completo (What to build + Acceptance criteria), a branch, e o brief com a baseline. Peça de volta: `IMPLEMENTADO` + diff stat + arquivos + **resultado por label** + commit hash + tasks + mapa AC→task.
+Abra o worker `implementer.md`, passando: referência e título da unidade, o corpo completo (What to build + Acceptance criteria), a branch, o brief com a baseline e os arquivos dos testes adversariais. Peça de volta: `IMPLEMENTADO` + diff stat + arquivos + **resultado por label** + commit hash + tasks + mapa AC→task.
 
 Se não retornar `IMPLEMENTADO`: Protocolo de Bloqueio.
 
-O implementador já rodou `lint`, `typecheck` e a suite de `test` a cada task, e o `build` uma vez no fim. **Não rode nada disso você mesmo** — no Bootstrap você rodou uma vez, para a foto; durante o loop, o resultado vem do worker.
+O implementador já rodou `lint`, `typecheck` e a suite de `test` a cada task, e o `build` e o `adversarial` uma vez no fim. **Não rode nada disso você mesmo** — no Bootstrap você rodou uma vez, para a foto; durante o loop, o resultado vem do worker.
 
 ### 3 — Revisar
 
@@ -208,23 +222,26 @@ Abra o worker `reviewer.md` em modo **review nova**, passando:
 - o caminho absoluto de `review-rules.md`, desta pasta;
 - o **corpo completo da unidade** (What to build + Acceptance criteria);
 - o **diff completo**;
+- os arquivos dos testes adversariais, que ele roda;
 - o **caminho** dos documentos de requisito que existirem — a cópia de trabalho da SPEC e, se ela declarar ids em `## Covers`, o `docs/prd.md`. **Localize a cópia da SPEC pelo número da issue** — o da própria unidade, ou o do pai quando a unidade é ticket: busque, com a ferramenta de busca de conteúdo, a linha exata `#<N>` (regex `^#<N>$`) em `.scratch/*/spec.md`. É convenção do pipeline, não do tracker — o `to-spec` e o `to-tickets` gravam o número na primeira linha justamente para isso. Não reconstrua o slug. Não encontrou, diga "não disponível" em vez de passar um caminho que não abre. **Caminho, não texto colado:** colar obrigaria você a carregar a SPEC no seu próprio contexto — o único que persiste do começo ao fim do loop, ticket após ticket, logo o mais caro — e ainda duplicá-la no prompt.
 
-**Nunca passe as notas do implementador ao revisor.** A independência dele é o que torna a review valiosa. Isso vale para o **raciocínio** de quem implementou, não para o **requisito**: a SPEC não é raciocínio de ninguém, é a régua, e esconder a régua não protege independência — só cega a review.
+O revisor busca sozinho o código que o diff afeta (ver `reviewer.md`); você não escolhe esse contexto por ele. **Nunca passe as notas do implementador ao revisor.** A independência dele é o que torna a review valiosa. Isso vale para o **raciocínio** de quem implementou, não para o **requisito**: a SPEC não é raciocínio de ninguém, é a régua, e esconder a régua não protege independência — só cega a review.
 
 Com tracker, **não mova a label aqui**. A review é parte do loop: a unidade segue em `in-progress` até a aprovação, no passo 5. Uma label própria para a review trocaria a cada rodada de correção e não muda nenhuma decisão.
 
 ### 4 — Arbitragem
 
-**Aprovado** se o revisor retornou `LIMPO` ou só NIT. Vá para 5. Os NITs vão para `## Achados do revisor` no corpo do PR, cada um com a resposta `recusado: NIT — não entra no loop de correção`. **NIT não abre rodada e não vira ticket** — não há limiar nem contador. O teto de rodadas continua 2.
+**Aprovado** só se o revisor retornou `LIMPO`. Vá para 5.
 
-**Há CRITICAL ou WARN** e `loop_count < 2`:
+**Nenhum achado é descartado por conta própria**, NIT inclusive: ou é corrigido, ou é recusado com motivo que a re-review aceita (falso positivo), ou chega ao usuário — no Protocolo de Bloqueio ou listado em `## Ficou de fora`.
+
+**Há achado** (CRITICAL, WARN ou NIT) e `loop_count < 2`:
 
 ```
 loop_count += 1
 ```
 
-Registre `git rev-parse HEAD` — é a base da correção. Abra o worker `implementer.md` de novo, passando: a referência da unidade, a branch, **a lista de achados CRITICAL e WARN verbatim** (com a `CLASSE` de cada um) como peça de trabalho, e o caminho de `review-rules.md` — o implementador consulta ali o critério pelo código de cada achado. A lista de achados é o contrato dele; o mandato estreito já está escrito nas "Restrições absolutas" do arquivo dele — não repita nem invente um segundo contrato aqui. Peça de volta `IMPLEMENTADO` ou `ESCALAR`, e o bloco `Respostas`: cada CRITICAL e cada WARN como `corrigido` ou `recusado` com motivo. Resposta faltando não é `IMPLEMENTADO` — devolva a peça **uma vez**, apontando qual achado ficou sem resposta. Essa devolução não incrementa `loop_count`. Na segunda volta sem resposta, o achado fica pendente e a arbitragem segue com ele aberto.
+Registre `git rev-parse HEAD` — é a base da correção. Abra o worker `implementer.md` de novo, passando: a referência da unidade, a branch, **a lista de achados verbatim** (com a `CLASSE` de cada CRITICAL e WARN) como peça de trabalho, e o caminho de `review-rules.md` — o implementador consulta ali o critério pelo código de cada achado. A lista de achados é o contrato dele; o mandato estreito já está escrito nas "Restrições absolutas" do arquivo dele — não repita nem invente um segundo contrato aqui. Peça de volta `IMPLEMENTADO` ou `ESCALAR`, e o bloco `Respostas`: cada achado como `corrigido` ou `recusado` com motivo. Resposta faltando não é `IMPLEMENTADO` — devolva a peça **uma vez**, apontando qual achado ficou sem resposta. Essa devolução não incrementa `loop_count`. Na segunda volta sem resposta, o achado fica pendente e a arbitragem segue com ele aberto.
 
 **Classe repetida.** Se o achado traz `CLASSE`, procure a mesma frase de classe nos corpos de PR deste repo: `gh pr list --state all --limit 30`, e leia o corpo dos que tiverem `## Achados do revisor`. Segunda ocorrência da mesma classe: ela sobe para `docs/agents/review-rules-projeto.md`. Não copie critério universal que já pegaria o caso sem nada deste repo. O que entra é a forma concreta — um critério no formato dos universais, com o código universal citado e um "como checar" do que escapou aqui. Quem grava é o `implementer`, como task desta correção, enquanto `loop_count < 2`. Se o teto já estourou, o follow-up ou o bloqueio leva a linha "promover a classe para `review-rules-projeto.md`", em vez de uma terceira rodada. Classe que o universal cobre por inteiro, sem forma local: não crie critério, e diga isso na resposta do achado.
 
@@ -253,7 +270,7 @@ Ele **não** entra na fronteira da SPEC corrente, **não** conta para a condiç�
 
 ### 5 — Concluir a unidade
 
-Com tracker, registre a evidência e encerre o estado da unidade. Grave num arquivo em `.scratch/` o comentário — "Implementado e aprovado", o commit, os achados do revisor com a resposta de cada um (`corrigido` ou `recusado` e o motivo; NIT com a resposta fixa de NIT) e o bloco `Checks` do retorno do implementer, colado label por label — e rode:
+Com tracker, registre a evidência e encerre o estado da unidade. Grave num arquivo em `.scratch/` o comentário — "Implementado e aprovado", o commit, os achados do revisor com a resposta de cada um (`corrigido` ou `recusado` e o motivo) e o bloco `Checks` do retorno do implementer, colado label por label — e rode:
 
 ```bash
 gh issue comment [N] --body-file [arquivo]
@@ -365,12 +382,12 @@ Cite cada caminho que decidiu a classe, e qual classe foi. Em `risk:medio`, diga
 
 ### Passada de segurança
 
-Só em `risk:alto`. Abra um subagente novo, contexto limpo, prompt `reviewer.md`, em modo **passada de segurança**. Passe: o caminho absoluto de `review-rules.md`, o diff `git diff main...HEAD`, a raiz absoluta do repositório, e a lista de achados que as reviews das unidades já responderam (`corrigido` ou `recusado` com motivo). A instrução é a seção "Passada de segurança" do `reviewer.md`: só S1–S4. Não passe nota do `implementer`. A classificação explica por que a passada existe; ela não diz o que a passada tem que concluir.
+Só em `risk:alto`. Abra um subagente novo, contexto limpo, prompt `reviewer.md`, em modo **passada de segurança**. Passe: o caminho absoluto de `review-rules.md`, o diff `git diff main...HEAD`, a raiz absoluta do repositório, o caminho da SPEC, os arquivos dos testes adversariais e a lista de achados que as reviews das unidades já responderam (`corrigido` ou `recusado` com motivo). A instrução é a seção "Passada de segurança" do `reviewer.md`: S1–S4 e `## O que nunca pode quebrar`, com o código que o diff afeta e os testes rodando. Não passe nota do `implementer`. A classificação explica por que a passada existe; ela não diz o que a passada tem que concluir.
 
 Essa passada **não soma no `loop_count`** e não sobe o teto de 2 da unidade. O ciclo dela é um:
 
-- `LIMPO`, ou só NIT → no corpo, "Passada de segurança: limpa". NIT segue a resposta fixa de NIT.
-- CRITICAL ou WARN → uma correção pelo `implementer`, com os achados verbatim e a classe, e uma re-review incremental dessa correção, no mesmo modo. Não repita o ciclo.
+- `LIMPO` → no corpo, "Passada de segurança: limpa".
+- Qualquer achado → uma correção pelo `implementer`, com os achados verbatim e a classe, e uma re-review incremental dessa correção, no mesmo modo. Não repita o ciclo.
 - Achado de risco alto ainda aberto depois desse ciclo → Protocolo de Bloqueio. O PR não abre.
 - O que sobrar → ticket de follow-up, como na arbitragem, e o PR abre declarando.
 
@@ -381,6 +398,8 @@ Achado que a review da unidade já respondeu não se reabre aqui. O revisor rece
 ## Abrir o PR
 
 **Quando:** com tracker, o PR só abre quando a **SPEC inteira** fecha — todos os tickets fechados. Ticket cujo pai ainda tem irmãos abertos: dê push na branch, reporte o que falta, e **não abra PR** — sem classificação de risco e sem passada de segurança. Senão a SPEC chega na `main` em pedaços. Na abertura de fato, a classificação e a passada acontecem antes deste push; um commit da passada entra nele.
+
+**Testes adversariais verdes.** O PR só abre com o label `adversarial` verde no último retorno do `implementer` e na execução do revisor. Vermelho é um ataque que funcionou: os testes vermelhos viram peça de correção do `implementer`, no mesmo teto de 2; ainda vermelho, Protocolo de Bloqueio. O PR não abre.
 
 ```bash
 git push origin [BRANCH]
@@ -405,7 +424,7 @@ Abra com `gh pr create --draft --base main --title "[título da unidade]" --body
   - Depois do merge: `git revert` do merge commit.
   - Deploy: se o projeto tem `vercel.json`, `vercel.ts`, ou o arquivo de instruções diz Vercel, rollback para o deployment anterior. Senão, o revert na `main` e o deploy que a `main` dispara. Não invente painel que o repo não usa.
   - Se o diff traz migração, uma quarta linha: o revert do git não desfaz schema. O reverso, a ordem com o merge e o que se perde estão no comentário da pergunta de aplicação. Não reescreva essa pergunta nesta seção.
-- **`## Achados do revisor`** — cada CRITICAL, WARN e NIT das unidades, e os da passada de segurança, com a resposta: `corrigido` (classe e ocorrências) ou `recusado` (motivo). NIT leva `recusado: NIT — não entra no loop de correção`. Sem achado, a seção diz "Nenhum achado." Passada de segurança limpa: a linha "Passada de segurança: limpa".
+- **`## Achados do revisor`** — cada CRITICAL, WARN e NIT das unidades, e os da passada de segurança, com a resposta: `corrigido` (classe e ocorrências) ou `recusado` (motivo aceito na re-review). Sem achado, a seção diz "Nenhum achado." Passada de segurança limpa: a linha "Passada de segurança: limpa".
 - **`## Ficou de fora`** — os tickets de follow-up abertos na arbitragem, cada um com número e uma linha em português. Sem follow-up, "Nada ficou de fora."
 - **Evidência por unidade** — commit, em quantos loops os achados foram resolvidos
 - **Baseline** — se ela estava vermelha no Bootstrap e o usuário mandou seguir, diga o quê estava vermelho. Pode ficar no fim de `## Como foi testado`.
@@ -478,7 +497,7 @@ Informe a URL do PR. Se a SPEC veio de um PRD, informe que a próxima SPEC pode 
 
 ## Protocolo de Bloqueio
 
-Ativado quando: achado de risco alto não resolvido após 2 loops; achado de risco alto ainda aberto depois do ciclo único da passada de segurança; worker retorna ESCALAR; hard stop por princípio; implementador falha sem retornar IMPLEMENTADO; baseline vermelha no Bootstrap; falha em "Aplicar em produção". No bloqueio que veio da passada de segurança, `Loops executados` continua sendo o da unidade (N de 2); acrescente a linha "Passada de segurança: 1 ciclo, achado de risco alto ainda aberto".
+Ativado quando: achado de risco alto não resolvido após 2 loops; teste adversarial vermelho após 2 loops; achado de risco alto ainda aberto depois do ciclo único da passada de segurança; worker retorna ESCALAR; hard stop por princípio; implementador falha sem retornar IMPLEMENTADO; baseline vermelha no Bootstrap; falha em "Aplicar em produção". No bloqueio que veio da passada de segurança, `Loops executados` continua sendo o da unidade (N de 2); acrescente a linha "Passada de segurança: 1 ciclo, achado de risco alto ainda aberto".
 
 **Regra canônica de escalação:** toda escalação ao humano é formulada como decisão de **produto** ou de **risco**, nunca como decisão de **código**. Problema que só pode ser formulado como decisão de código **tem que ser resolvido dentro do loop** — não existe engenheiro do outro lado para quem empurrá-lo. "Resolva os achados acima manualmente" não é uma saída; é jogar o problema fora.
 
